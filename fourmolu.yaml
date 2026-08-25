@@ -1,0 +1,24 @@
+# https://fourmolu.github.io/config/
+
+indentation: 2
+respectful: true
+unicode: never
+
+# Max line length for automatic line breaking
+column-limit: none
+
+function-arrows: leading
+comma-style: leading
+import-export-style: leading
+import-grouping: legacy
+indent-wheres: false
+record-brace-space: false
+newlines-between-decls: 1
+let-style: auto
+in-style: right-align
+sort-constraints: false
+sort-derived-classes: false
+sort-deriving-clauses: false
+trailing-section-operators: true
+haddock-style: multi-line
+haddock-style-module: multi-line

@@ -47,7 +47,8 @@ library
   import: warnings
   -- Modules exported by the library.
   exposed-modules:
-    Ibis.Syntax.Parser
+    Ibis.Syntax.AST,
+    Ibis.Syntax.Parser,
 
   -- Modules included in this library but not exported.
   -- other-modules:
@@ -61,6 +62,7 @@ library
     base ^>=4.20.2.0,
     containers ^>=0.8,
     megaparsec ^>=9.8.1,
+    parser-combinators ^>=1.3.1,
 
   -- Directories containing source files.
   hs-source-dirs: src
