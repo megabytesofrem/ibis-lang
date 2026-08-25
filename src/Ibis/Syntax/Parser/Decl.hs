@@ -1,16 +1,8 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
-module Ibis.Syntax.Parser
-  ( -- * Lexer utilities
-    sc
-  , lexeme
-  , symbol
-  , enclosed
-  , enclosedStr
-  , alternativeSym
-
-    -- * Parsers
-  , pIdent
+module Ibis.Syntax.Parser.Decl
+  ( -- * Parsers
+    pIdent
   , pCtorName
   , pQualifiedName
   , pLiteral
@@ -21,93 +13,12 @@ where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.List (intersperse)
-import Data.Void
 import Ibis.Syntax.AST
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 
--- Parser type alias for convenience
-type Parser = Parsec Void String
-
-sc :: Parser ()
-sc =
-  L.space
-    space1
-    (L.skipLineComment "//")
-    (L.skipBlockComment "/*" "*/")
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
-
-symbol :: String -> Parser String
-symbol = L.symbol sc
-
-enclosed :: Char -> Char -> Parser a -> Parser a
-enclosed open close = between (symbol [open] >> sc) (symbol [close] >> sc)
-
-enclosedStr :: String -> String -> Parser a -> Parser a
-enclosedStr open close = between (symbol open >> sc) (symbol close >> sc)
-
-alternativeSym :: String -> String -> Parser String
-alternativeSym s z = symbol s <|> symbol z
-
----------------------------------------------
-
--- List of reserved words in the language
-reservedWords :: [String]
-reservedWords =
-  [ "∀"
-  , "forall"
-  , "type"
-  , "class"
-  , "impl"
-  , "def"
-  , "if"
-  , "then"
-  , "else"
-  , "for"
-  , "match"
-  , "with"
-  , "let"
-  , "in"
-  , "do"
-  , "end"
-  , "ret"
-  ]
-
--- List of reserved primitive types in the language
-primTypes :: [String]
-primTypes =
-  [ "Int"
-  , "Uint"
-  , "Float"
-  , "Bool"
-  , "String"
-  , "Char"
-  , "Unit"
-  ]
-
-isPrim :: String -> Bool
-isPrim name = name `elem` primTypes
-
-pIdentImpl :: Parser String
-pIdentImpl = lexeme . try $ do
-  firstChar <- letterChar <|> char '_'
-  rest <- many (alphaNumChar <|> char '_' <|> char '\'')
-  let ident = firstChar : rest
-  if ident `elem` reservedWords || isPrim ident
-    then fail $ "Reserved word or primitive type: " ++ ident
-    else pure ident
-
-pCtorNameImpl :: Parser String
-pCtorNameImpl = do
-  firstChar <- upperChar
-  rest <- many (alphaNumChar <|> char '_' <|> char '\'')
-  let ident = firstChar : rest
-  if ident `elem` reservedWords || isPrim ident
-    then fail $ "Reserved word or primitive type: " ++ ident
-    else pure ident
+import Ibis.Syntax.Parser.Lexer (Parser, alternativeSym, enclosed, lexeme, pCtorNameImpl, pIdentImpl, symbol)
 
 -- Parsers for types
 pType :: Parser Ty

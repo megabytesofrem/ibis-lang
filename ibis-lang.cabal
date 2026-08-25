@@ -48,7 +48,9 @@ library
   -- Modules exported by the library.
   exposed-modules:
     Ibis.Syntax.AST,
-    Ibis.Syntax.Parser,
+    Ibis.Syntax.Parser.Lexer,
+    Ibis.Syntax.Parser.Decl,
+    Ibis.Syntax.Parser.Pattern,
 
   -- Modules included in this library but not exported.
   -- other-modules:
