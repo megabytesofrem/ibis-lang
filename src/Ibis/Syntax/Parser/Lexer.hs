@@ -2,12 +2,19 @@
 
 module Ibis.Syntax.Parser.Lexer
   ( Parser
+
+    -- * Lexing utilities
   , sc
   , lexeme
   , symbol
   , enclosed
   , enclosedStr
   , alternativeSym
+  , parens
+  , brackets
+  , braces
+
+    -- * Core parsers
   , pIdentImpl
   , pCtorNameImpl
   , pIdent
@@ -48,6 +55,15 @@ enclosedStr open close = between (symbol open >> sc) (symbol close >> sc)
 
 alternativeSym :: String -> String -> Parser String
 alternativeSym s1 s2 = symbol s1 <|> symbol s2
+
+parens :: Parser a -> Parser a
+parens = enclosed '(' ')'
+
+brackets :: Parser a -> Parser a
+brackets = enclosed '[' ']'
+
+braces :: Parser a -> Parser a
+braces = enclosed '{' '}'
 
 ---------------------------------------------
 

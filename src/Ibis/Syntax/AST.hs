@@ -4,8 +4,14 @@ module Ibis.Syntax.AST
   , Unop (..)
   , Binop (..)
   , Expr (..)
+  , Decl (..)
   , Ty (..)
   , Pat (..)
+
+    -- * Declarations
+  , FunctionDeclaration (..)
+  , DataTypeConstructor (..)
+  , DataTypeConstructors
   )
 where
 
@@ -52,6 +58,37 @@ data Expr
   | EFor Binder Expr Expr -- for x in e₁: e₂
   | EMatch Expr [(Pat, Expr)] -- match e with | pat -> e
   deriving (Show, Eq)
+
+---------------------------------------------
+-- Declarations
+
+-- List of data type constructors
+type DataTypeConstructors = [DataTypeConstructor]
+
+data DataTypeConstructor
+  = RecordConstructor String [(String, Ty)] -- Ctor { field1: Ty1, field2: Ty2 }
+  | ProductConstructor String [Ty] -- Ctor Ty1 Ty2
+  | TupleConstructor [Ty] -- (Ty1, Ty2)
+  deriving (Show, Eq)
+
+data FunctionDeclaration = FunctionDeclaration
+  { funcName :: String
+  , funcParams :: [Binder]
+  , funcReturnType :: Maybe Ty
+  , funcBody :: Expr
+  }
+  deriving (Show, Eq)
+
+data Decl
+  = ExprDecl Expr
+  | FunctionDecl FunctionDeclaration
+  | DataDecl String [String] DataTypeConstructors
+  | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
+  | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
+  deriving (Show, Eq)
+
+---------------------------------------------
+-- Types and Patterns
 
 data Ty
   = TInt
