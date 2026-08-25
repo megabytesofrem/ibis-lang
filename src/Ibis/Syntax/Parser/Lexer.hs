@@ -10,10 +10,16 @@ module Ibis.Syntax.Parser.Lexer
   , alternativeSym
   , pIdentImpl
   , pCtorNameImpl
+  , pIdent
+  , pCtorName
+  , pQualifiedName
+  , pLiteral
   )
 where
 
+import Data.List (intersperse)
 import Data.Void (Void)
+import Ibis.Syntax.AST (Literal (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -51,6 +57,7 @@ reservedWords =
   [ "∀"
   , "forall"
   , "type"
+  , "record"
   , "class"
   , "impl"
   , "def"
@@ -99,3 +106,36 @@ pCtorNameImpl = do
   if ident `elem` reservedWords || isPrim ident
     then fail $ "Reserved word or primitive type: " ++ ident
     else pure ident
+
+pIdent :: Parser String
+pIdent = try pIdentImpl
+
+-- Parse an uppercase constructor name, e.g. Some, Error
+pCtorName :: Parser String
+pCtorName = lexeme . try $ pCtorNameImpl
+
+-- Parse a fully qualified name, e.g. Module.Submodule.TypeName
+pQualifiedName :: Parser String
+pQualifiedName = lexeme . try $ do
+  parts <- some (try $ pCtorNameImpl <* symbol ".")
+  lastPart <- pIdentImpl
+  pure $ concat (intersperse "." (parts ++ [lastPart]))
+
+pIntegerLit :: Parser Integer
+pIntegerLit = lexeme L.decimal
+
+pFloatLit :: Parser Double
+pFloatLit = lexeme L.float
+
+pStringLit :: Parser String
+pStringLit = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
+
+pLiteral :: Parser Literal
+pLiteral =
+  choice
+    [ LitInt <$> pIntegerLit
+    , LitFloat <$> pFloatLit
+    , LitBool True <$ symbol "true"
+    , LitBool False <$ symbol "false"
+    , LitString <$> pStringLit
+    ]

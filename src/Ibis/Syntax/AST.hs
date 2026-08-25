@@ -5,6 +5,7 @@ module Ibis.Syntax.AST
   , Binop (..)
   , Expr (..)
   , Ty (..)
+  , Pat (..)
   )
 where
 
@@ -48,6 +49,8 @@ data Expr
   | EApp Expr Expr -- e₁ e₂
   | ELet Binder Expr Expr -- let x = e₁ in e₂
   | EIf Expr Expr Expr -- if cond then e₁ else e₂
+  | EFor Binder Expr Expr -- for x in e₁: e₂
+  | EMatch Expr [(Pat, Expr)] -- match e with | pat -> e
   deriving (Show, Eq)
 
 data Ty
@@ -61,4 +64,14 @@ data Ty
   | TForall String Ty -- forall a. a -> a
   | TApp Ty Ty -- Type application, e.g. Maybe Int
   | TCons String [Ty] -- Type constructor with parameters
+  deriving (Show, Eq)
+
+data Pat
+  = PLit Literal
+  | PCapture String -- x
+  | PWildcard -- _
+  | PTuple [Pat] -- (p1, p2, p3)
+  | PList [Pat] -- [p1, p2, p3]
+  | PCtor String [Pat] -- Ctor x y
+  | PPartition String Pat -- (x:xs)
   deriving (Show, Eq)

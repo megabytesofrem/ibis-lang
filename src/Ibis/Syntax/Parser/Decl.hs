@@ -2,9 +2,7 @@
 
 module Ibis.Syntax.Parser.Decl
   ( -- * Parsers
-    pIdent
-  , pCtorName
-  , pQualifiedName
+    pQualifiedName
   , pLiteral
   , pType
   , pExpr
@@ -12,13 +10,11 @@ module Ibis.Syntax.Parser.Decl
 where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
-import Data.List (intersperse)
 import Ibis.Syntax.AST
 import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer qualified as L
 
-import Ibis.Syntax.Parser.Lexer (Parser, alternativeSym, enclosed, lexeme, pCtorNameImpl, pIdentImpl, symbol)
+import Ibis.Syntax.Parser.Lexer
+import Ibis.Syntax.Parser.Pattern (pPattern)
 
 -- Parsers for types
 pType :: Parser Ty
@@ -76,39 +72,6 @@ pArrowTy = do
 
 ---------------------------------------------
 
-pIdent :: Parser String
-pIdent = try pIdentImpl
-
--- Parse an uppercase constructor name, e.g. Some, Error
-pCtorName :: Parser String
-pCtorName = lexeme . try $ pCtorNameImpl
-
--- Parse a fully qualified name, e.g. Module.Submodule.TypeName
-pQualifiedName :: Parser String
-pQualifiedName = lexeme . try $ do
-  parts <- some (try $ pCtorNameImpl <* symbol ".")
-  lastPart <- pIdentImpl
-  pure $ concat (intersperse "." (parts ++ [lastPart]))
-
-pIntegerLit :: Parser Integer
-pIntegerLit = lexeme L.decimal
-
-pFloatLit :: Parser Double
-pFloatLit = lexeme L.float
-
-pStringLit :: Parser String
-pStringLit = lexeme (char '"' >> manyTill L.charLiteral (char '"'))
-
-pLiteral :: Parser Literal
-pLiteral =
-  choice
-    [ LitInt <$> pIntegerLit
-    , LitFloat <$> pFloatLit
-    , LitBool True <$ symbol "true"
-    , LitBool False <$ symbol "false"
-    , LitString <$> pStringLit
-    ]
-
 ---------------------------------------------
 -- Expression parsers
 
@@ -130,6 +93,43 @@ pLet = do
   _ <- symbol "in"
   ELet binder value <$> pExpr
 
+pIf :: Parser Expr
+pIf = do
+  _ <- symbol "if"
+  cond <- pExpr
+  _ <- symbol "then"
+  thenExpr <- pExpr
+  _ <- symbol "else"
+  elseExpr <- pExpr
+  pure $ EIf cond thenExpr elseExpr
+
+pFor :: Parser Expr
+pFor = do
+  _ <- symbol "for"
+  binder <- pBinder
+  _ <- symbol "in"
+  collection <- pExpr
+  _ <- symbol ":"
+  body <- pExpr
+  pure $ EFor binder collection body
+
+pMatchArm :: Parser (Pat, Expr)
+pMatchArm = do
+  pat <- pPattern
+  _ <- alternativeSym "->" "→"
+  expr <- pExpr
+  pure (pat, expr)
+
+pMatch :: Parser Expr
+pMatch = do
+  _ <- symbol "match"
+  expr <- pExpr
+  _ <- symbol "with"
+  firstArm <- symbol "|" >> pMatchArm
+  restArms <- many (symbol "|" >> pMatchArm)
+  let arms = firstArm : restArms
+  pure $ EMatch expr arms
+
 pApply :: Parser Expr
 pApply = do
   func <- pTerm
@@ -142,6 +142,9 @@ pTerm =
     [ ELit <$> pLiteral
     , EVar <$> pIdent
     , pLet
+    , pIf
+    , pFor
+    , pMatch
     , pListExpr
     , exprOrTuple
     ]
@@ -195,3 +198,6 @@ operatorTable =
   , [infixL "and" (EBinop And)]
   , [infixL "or" (EBinop Or)]
   ]
+
+---------------------------------------------
+-- Declaration parsers

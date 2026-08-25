@@ -1,0 +1,20 @@
+type Person = record
+  name: String
+  gender: Gender
+end
+
+type Gender = 
+  | Male
+  | Female
+  | Other String
+
+pronounsFor : Gender -> String
+def pronounsFor gender =
+  match gender with
+  | Male    -> "he/him"
+  | Female  -> "she/her"
+  | Other x -> "they/them"
+
+greet : Person -> String
+def greet person = 
+  concat ["Hello. I shall refer to you as ", pronounsFor person.gender]
