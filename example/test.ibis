@@ -1,10 +1,32 @@
-data Language = 
+enum Language:
   | English
   | French
   | Spanish
 
-def greet (lang: Language) (who: name) : String =
+record Person:
+  name : String
+  spokenLanguage : Language
+
+def greet (lang: Language) (who: name) : String :=
   match lang:
     | English -> "Hello " <> who
     | French  -> "Bonjour " <> who
     | Spanish -> "Hola " <> who 
+
+-- Declaring a Grothendieck site
+site SExample where:
+  covers: [ ~site1, ~site2 ]
+  morphisms:
+    to: ~site1 -> ~site2
+    from: ~site2 -> ~site1
+
+
+-- Example of a typeclass for showing things
+class Show α:
+  def show {α : ∀α.a} : String
+
+class Eq α:
+  def eq {α : ∀α.α} (a: α) (b: α) : Bool
+
+instance Show for Person:
+  def show {α : Person} (p: Person) : String := f"Hello {p.name}"

@@ -217,50 +217,36 @@ pField = do
   ty <- pType
   pure (name, ty)
 
--- Parse a record constructor:
---  record Foo
+-- Parse a record declaration:
+--  record Foo:
 --   field1: Int,
 --   field2: String
-pRecordConstructor :: Parser DataTypeConstructor
-pRecordConstructor = do
+pRecordDecl :: Parser Decl
+pRecordDecl = do
   _ <- symbol "record"
   name <- pCtorName
+  _ <- symbol ":"
   fields <- pField `sepBy1` symbol ","
-  pure $ RecordConstructor name fields
+  pure $ RecordDecl $ RecordDeclaration name fields
 
--- Parse a product constructor:
---  Foo Int String
-pProductConstructor :: Parser DataTypeConstructor
-pProductConstructor = do
+-- Parse an enum declaration:
+-- enum Option {α : ∀α. Option α}:
+--   | Some α
+--   | None
+pEnumDecl :: Parser Decl
+pEnumDecl = do
+  _ <- symbol "enum"
   name <- pCtorName
-  tys <- many pType
-  pure $ ProductConstructor name tys
-
---  Parse a tuple constructor:
---  (Int, String)
-pTupleConstructor :: Parser DataTypeConstructor
-pTupleConstructor = do
-  tys <- parens (pType `sepBy1` symbol ",")
-  pure $ TupleConstructor tys
-
-pDataTypeConstructor :: Parser DataTypeConstructor
-pDataTypeConstructor =
-  try pRecordConstructor
-    <|> pTupleConstructor
-    <|> pProductConstructor
-
--- Parse a data declaration:
--- data Maybe a = Just a | Nothing
-pDataDecl :: Parser Decl
-pDataDecl = do
-  _ <- symbol "data"
-  typeName <- pCtorName
-  typeParams <- many pIdent
-  _ <- symbol "="
-
-  -- Parse multiple constructors separated by "|" (sum types)
-  constructors <- pDataTypeConstructor `sepBy1` symbol "|"
-  pure $ DataDecl typeName typeParams constructors
+  _ <- symbol ":"
+  constructors <- some parseConstructor
+  pure $ EnumDecl $ EnumDeclaration name constructors
+ where
+  parseConstructor :: Parser EnumConstructor
+  parseConstructor = do
+    _ <- symbol "|"
+    ctorName <- pCtorName
+    ctorFields <- many pType
+    pure $ EnumConstructor ctorName ctorFields
 
 pModuleName :: Parser String
 pModuleName = do
@@ -299,17 +285,21 @@ pImportDecl =
     <|> try pExposingImport
     <|> try pWholeImport
 
+pFunctionParam :: Parser FunctionParam
+pFunctionParam = BinderParam <$> pBinder
+
 -- Parse a function declaration:
--- def add (a: Int) (b: Int): Int = a + b
--- def id (a': forall a. a): a = a'
+-- def siteBound {@Site} (ptr: Ptr Int {@Site}) : Int := ...
+-- def add (a: Int) (b: Int): Int := a + b
+-- def id {α : ∀α.α} (a: α): α := a
 pFunctionDecl :: Parser Decl
 pFunctionDecl = do
   _ <- symbol "def"
   funcName <- pIdent
-  paramGroups <- many (parens (pBinder `sepBy` symbol ","))
+  paramGroups <- many (parens (pFunctionParam `sepBy` symbol ","))
   let funcParams = concat paramGroups
   returnType <- optional (symbol ":" >> pType)
-  _ <- symbol "="
+  _ <- symbol ":="
   body <- parseExpr
   pure $
     FunctionDecl $
@@ -320,12 +310,44 @@ pFunctionDecl = do
         , funcBody = body
         }
 
+pSiteCover :: Parser String
+pSiteCover = symbol "~" *> pIdent
+
+pSiteMorphism :: Parser SiteMorphism
+pSiteMorphism = do
+  name <- pIdent
+  _ <- symbol ":"
+  source <- pSiteCover
+  _ <- alternativeSym "->" "→"
+  target <- pSiteCover
+  pure $ SiteMorphism name source target
+
+-- Parse a topological site declaration:
+-- site MySite where:
+--   covers: [~a, ~b]
+--   morphisms:
+--     f: ~a -> ~b
+--     g: ~b -> ~a
+pSiteDecl :: Parser Decl
+pSiteDecl = do
+  _ <- symbol "site"
+  siteName <- pIdent
+  _ <- symbol "where:"
+
+  _ <- symbol "covers:"
+  siteCovers <- brackets (pSiteCover `sepBy` symbol ",")
+  _ <- symbol "morphisms:"
+  siteMorphisms <- many pSiteMorphism
+  pure $ SiteDecl $ SiteDeclaration{siteName, siteCovers, siteMorphisms}
+
 parseDecl :: Parser Decl
 parseDecl =
   choice
-    [ try pFunctionDecl
+    [ try pEnumDecl
+    , try pRecordDecl
+    , try pFunctionDecl
     , try pImportDecl
-    , try pDataDecl
+    , try pSiteDecl
     ]
 
 parseProgram :: Parser [Decl]

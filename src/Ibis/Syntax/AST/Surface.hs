@@ -9,9 +9,13 @@ module Ibis.Syntax.AST.Surface
   , Pat (..)
 
     -- * Declarations
+  , FunctionParam (..)
+  , EnumConstructor (..)
+  , EnumDeclaration (..)
+  , RecordDeclaration (..)
   , FunctionDeclaration (..)
-  , DataTypeConstructor (..)
-  , DataTypeConstructors
+  , SiteDeclaration (..)
+  , SiteMorphism (..)
   )
 where
 
@@ -53,27 +57,60 @@ data Expr
 -- DECLARATION NODES
 ---------------------------------------------
 
--- List of data type constructors
-type DataTypeConstructors = [DataTypeConstructor]
+-- A morphism in a topological site
+data SiteMorphism = SiteMorphism
+  { morphismName :: String
+  , morphismSource :: String
+  , morphismTarget :: String
+  }
+  deriving (Show, Eq)
 
-data DataTypeConstructor
-  = RecordConstructor String [(String, Ty)]
-  | ProductConstructor String [Ty] -- Ctor Ty1 Ty2
-  | TupleConstructor [Ty] -- (Ty1, Ty2)
+-- Function parameters can be binders or type parameters (polymorphism)
+data FunctionParam
+  = BinderParam Binder
+  | TypeParam String -- e.g., a type variable 'α'
+  deriving (Show, Eq)
+
+-- Enum constructor with fields, e.g., Some Int, Error String
+data EnumConstructor = EnumConstructor
+  { enumCtorName :: String
+  , enumCtorFields :: [Ty]
+  }
+  deriving (Show, Eq)
+
+data EnumDeclaration = EnumDeclaration
+  { enumName :: String
+  , enumConstructors :: [EnumConstructor]
+  }
+  deriving (Show, Eq)
+
+data RecordDeclaration = RecordDeclaration
+  { recordName :: String
+  , recordFields :: [(String, Ty)]
+  }
   deriving (Show, Eq)
 
 data FunctionDeclaration = FunctionDeclaration
   { funcName :: String
-  , funcParams :: [Binder]
+  , funcParams :: [FunctionParam]
   , funcReturnType :: Maybe Ty
   , funcBody :: Expr
   }
   deriving (Show, Eq)
 
+data SiteDeclaration = SiteDeclaration
+  { siteName :: String
+  , siteCovers :: [String]
+  , siteMorphisms :: [SiteMorphism]
+  }
+  deriving (Show, Eq)
+
 data Decl
   = ExprDecl Expr
+  | EnumDecl EnumDeclaration
+  | RecordDecl RecordDeclaration
   | FunctionDecl FunctionDeclaration
-  | DataDecl String [String] DataTypeConstructors
+  | SiteDecl SiteDeclaration
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
   deriving (Show, Eq)
@@ -221,26 +258,46 @@ instance Prettyprint Pat where
     restStr <- pretty rest
     pure $ first <> " :: " <> restStr
 
-instance Prettyprint DataTypeConstructor where
-  pretty (RecordConstructor name fields) = do
+instance Prettyprint SiteMorphism where
+  pretty (SiteMorphism name source target) = do
+    pure $ name <> " : " <> source <> " -> " <> target
+
+instance Prettyprint SiteDeclaration where
+  pretty (SiteDeclaration name covers morphisms) = do
+    coversStr <- pure $ unwords (intersperse ", " covers)
+    morphismsStrs <- mapM pretty morphisms
+    let morphismsStr = unlines morphismsStrs
+    pure $ "site " <> name <> " covering (" <> coversStr <> "):\n" <> morphismsStr
+
+instance Prettyprint EnumConstructor where
+  pretty (EnumConstructor name fields) = do
+    fieldsStrs <- mapM pretty fields
+    let fieldsStr = unwords fieldsStrs
+    pure $ name <> if null fields then "" else " " <> fieldsStr
+
+instance Prettyprint EnumDeclaration where
+  pretty (EnumDeclaration name ctors) = do
+    ctorsStrs <- mapM pretty ctors
+    let ctorsStr = unwords (intersperse ", " ctorsStrs)
+    pure $ "enum " <> name <> " = " <> ctorsStr
+
+instance Prettyprint RecordDeclaration where
+  pretty (RecordDeclaration name fields) = do
     fieldsStrs <-
       mapM
-        ( \(fname, fty) -> do
-            ftyStr <- pretty fty
-            pure $ fname <> " : " <> ftyStr
-        )
+        (\(fname, ftype) -> prettyField (fname, ftype))
         fields
 
-    let fieldsStr = unwords (intersperse ", " fieldsStrs)
-    pure $ name <> " { " <> fieldsStr <> " }"
-  pretty (ProductConstructor name tys) = do
-    tysStrs <- mapM pretty tys
-    let tysStr = unwords tysStrs
-    pure $ name <> " " <> tysStr
-  pretty (TupleConstructor tys) = do
-    tysStrs <- mapM pretty tys
-    let tysStr = unwords (intersperse ", " tysStrs)
-    pure $ "(" <> tysStr <> ")"
+    let fieldsStr = unlines fieldsStrs
+    pure $ "record " <> name <> " {\n" <> fieldsStr <> "}"
+   where
+    prettyField (fname, ftype) = do
+      ftypeStr <- pretty ftype
+      pure $ fname <> ": " <> ftypeStr
+
+instance Prettyprint FunctionParam where
+  pretty (BinderParam binder) = pretty binder
+  pretty (TypeParam name) = pure name
 
 instance Prettyprint FunctionDeclaration where
   pretty (FunctionDeclaration name params mty body) = do
@@ -259,14 +316,18 @@ instance Prettyprint Decl where
   pretty (ExprDecl expr) = do
     exprStr <- pretty expr
     pure $ exprStr <> ";"
+  pretty (EnumDecl enumDecl) = do
+    enumDeclStr <- pretty enumDecl
+    pure $ enumDeclStr <> ";"
+  pretty (RecordDecl recordDecl) = do
+    recordDeclStr <- pretty recordDecl
+    pure $ recordDeclStr <> ";"
   pretty (FunctionDecl funcDecl) = do
     funcDeclStr <- pretty funcDecl
     pure $ funcDeclStr <> ";"
-  pretty (DataDecl name typeVars ctors) = do
-    ctorsStrs <- mapM pretty ctors
-    let ctorsStr = unwords (intersperse " | " ctorsStrs)
-    let typeVarsStr = unwords typeVars
-    pure $ "data " <> name <> (if null typeVars then "" else " " <> typeVarsStr) <> " = " <> ctorsStr
+  pretty (SiteDecl siteDecl) = do
+    siteDeclStr <- pretty siteDecl
+    pure $ siteDeclStr <> ";"
   pretty (ImportDecl moduleName malias) = do
     let aliasStr = case malias of
           Just a -> " as " <> a
