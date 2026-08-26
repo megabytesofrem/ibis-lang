@@ -7,15 +7,16 @@ module Ibis.Syntax.Parser.Decl
   , pLiteral
   , pType
   , parseExpr
+  , parseDecl
+  , parseProgram
   )
 where
 
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
-import Ibis.Syntax.AST
+import Data.List (intercalate)
 import Text.Megaparsec
 
-import Control.Monad (unless)
-import Data.List (intercalate)
+import Ibis.Syntax.AST
 import Ibis.Syntax.Parser.Lexer
 import Ibis.Syntax.Parser.Pattern (pPattern)
 

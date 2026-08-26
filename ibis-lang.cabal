@@ -48,6 +48,10 @@ library
   -- Modules exported by the library.
   exposed-modules:
     Ibis.Syntax.AST,
+    Ibis.Syntax.AST.Surface,
+    Ibis.Syntax.AST.Operator,
+
+    Ibis.Syntax.Parser,
     Ibis.Syntax.Parser.Lexer,
     Ibis.Syntax.Parser.Decl,
     Ibis.Syntax.Parser.Pattern,

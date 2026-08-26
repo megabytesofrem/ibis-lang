@@ -5,6 +5,6 @@ data Language =
 
 def greet (lang: Language) (who: name) : String =
   match lang:
-    | English -> "Hello " ~ who
-    | French  -> "Bonjour " ~ who
-    | Spanish -> "Hola " ~ who 
+    | English -> "Hello " <> who
+    | French  -> "Bonjour " <> who
+    | Spanish -> "Hola " <> who 

@@ -1,4 +1,4 @@
-module Ibis.Syntax.Parser.Pattern where
+module Ibis.Syntax.Parser.Pattern (pPattern) where
 
 import Ibis.Syntax.AST (Pat (..))
 import Ibis.Syntax.Parser.Lexer (Parser, enclosed, pCtorName, pIdent, pLiteral, symbol)
