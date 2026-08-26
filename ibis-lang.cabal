@@ -56,6 +56,8 @@ library
     Ibis.Syntax.Parser.Decl,
     Ibis.Syntax.Parser.Pattern,
 
+    Ibis.Prettyprint,
+
   -- Modules included in this library but not exported.
   -- other-modules:
   -- LANGUAGE extensions used by modules in this package.
@@ -68,6 +70,7 @@ library
     base ^>=4.20.2.0,
     containers ^>=0.8,
     megaparsec ^>=9.8.1,
+    mtl ^>=2.3.0,
     parser-combinators ^>=1.3.1,
 
   -- Directories containing source files.
