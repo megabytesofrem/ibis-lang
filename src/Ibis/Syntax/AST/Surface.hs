@@ -1,8 +1,10 @@
+-- | Surface AST for the Ibis programming language.
 module Ibis.Syntax.AST.Surface
   ( Literal (..)
   , Binder (..)
   , Expr (..)
   , Decl (..)
+  , Program (..)
   , Ty (..)
   , Pat (..)
 

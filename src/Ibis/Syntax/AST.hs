@@ -1,7 +1,8 @@
 module Ibis.Syntax.AST
-  ( module AST
+  ( module Surface
+  , module Operator
   )
 where
 
-import Ibis.Syntax.AST.Operator as AST
-import Ibis.Syntax.AST.Surface as AST
+import Ibis.Syntax.AST.Operator as Operator
+import Ibis.Syntax.AST.Surface as Surface

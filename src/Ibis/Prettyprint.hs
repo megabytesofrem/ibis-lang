@@ -2,7 +2,7 @@
 
 module Ibis.Prettyprint
   ( Prettyprint (..)
-  , Prettyprinter (unPretty)
+  , Prettyprinter (unPrettyprint)
   , PrettyprintCtx (..)
 
     -- * Prettyprint constructors
@@ -30,7 +30,7 @@ newtype PrettyprintCtx = PrettyprintCtx
 
 -- | Prettyprinter monad for pretty printing with indentation
 newtype Prettyprinter a = Prettyprinter
-  { unPretty :: State PrettyprintCtx a
+  { unPrettyprint :: State PrettyprintCtx a
   }
 
 class Prettyprint a where
@@ -39,18 +39,18 @@ class Prettyprint a where
 -- INSTANCES
 
 instance Functor Prettyprinter where
-  fmap f (Prettyprinter s) = Prettyprinter{unPretty = (fmap f s)}
+  fmap f (Prettyprinter s) = Prettyprinter{unPrettyprint = (fmap f s)}
 
 instance Applicative Prettyprinter where
-  pure x = Prettyprinter{unPretty = pure x}
-  (Prettyprinter f) <*> (Prettyprinter s) = Prettyprinter{unPretty = f <*> s}
+  pure x = Prettyprinter{unPrettyprint = pure x}
+  (Prettyprinter f) <*> (Prettyprinter s) = Prettyprinter{unPrettyprint = f <*> s}
 
 instance Monad Prettyprinter where
-  (Prettyprinter s) >>= f = Prettyprinter{unPretty = s >>= unPretty . f}
+  (Prettyprinter s) >>= f = Prettyprinter{unPrettyprint = s >>= unPrettyprint . f}
 
 instance MonadState PrettyprintCtx Prettyprinter where
-  get = Prettyprinter{unPretty = get}
-  put s = Prettyprinter{unPretty = put s}
+  get = Prettyprinter{unPrettyprint = get}
+  put s = Prettyprinter{unPrettyprint = put s}
 
 -- PRETTY PRINT FUNCTIONS
 
@@ -58,7 +58,7 @@ mkPrettyprintCtx :: Int -> PrettyprintCtx
 mkPrettyprintCtx indent = PrettyprintCtx{indentLevel = indent}
 
 mkPrettyprinter :: State PrettyprintCtx a -> Prettyprinter a
-mkPrettyprinter s = Prettyprinter{unPretty = s}
+mkPrettyprinter s = Prettyprinter{unPrettyprint = s}
 
 prettyPrint :: (Prettyprint a, Traversable t) => t a -> Prettyprinter (t String)
 prettyPrint = traverse pretty
@@ -85,8 +85,8 @@ withIndentCtx action = do
 
 -- | Evaluate a single pretty print step and return the resulting string.
 evalPrettyPrintStep :: (Prettyprint a) => a -> String
-evalPrettyPrintStep x = evalState (unPretty (pretty x)) (PrettyprintCtx{indentLevel = 0})
+evalPrettyPrintStep x = evalState (unPrettyprint (pretty x)) (PrettyprintCtx{indentLevel = 0})
 
 -- | Run the pretty printer and return the resulting string along with the final context.
 runPrettyPrint :: (Prettyprint a) => a -> PrettyprintCtx -> (String, PrettyprintCtx)
-runPrettyPrint x s = runState (unPretty (pretty x)) s
+runPrettyPrint x s = runState (unPrettyprint (pretty x)) s

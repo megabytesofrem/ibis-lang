@@ -49,6 +49,7 @@ library
   exposed-modules:
     Ibis.Syntax.AST,
     Ibis.Syntax.AST.Surface,
+    Ibis.Syntax.AST.Core,
     Ibis.Syntax.AST.Operator,
 
     Ibis.Syntax.Parser,
@@ -57,6 +58,7 @@ library
     Ibis.Syntax.Parser.Pattern,
 
     Ibis.Prettyprint,
+    Ibis.LowerToCore,
 
   -- Modules included in this library but not exported.
   -- other-modules:
