@@ -57,6 +57,9 @@ library
     Ibis.Syntax.Parser.Decl,
     Ibis.Syntax.Parser.Pattern,
 
+    Ibis.Typecheck.Typecheck,
+    Ibis.Typecheck.Environment,
+
     Ibis.Prettyprint,
     Ibis.LowerToCore,
 
