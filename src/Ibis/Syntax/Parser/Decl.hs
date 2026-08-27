@@ -32,7 +32,8 @@ pType = try pForAll <|> pArrowTy
 pAtomicKind :: Parser Kind
 pAtomicKind =
   choice
-    [ KStar <$ symbol "*"
+    -- The kind of types
+    [ KStar <$ symbol "Type"
     , parens pKind
     ]
 
@@ -337,7 +338,25 @@ pImportDecl =
     <|> try pWholeImport
 
 pFunctionParam :: Parser FunctionParam
-pFunctionParam = BinderParam <$> pBinder
+pFunctionParam =
+  choice
+    [ -- Binder parameter with type annotation: (x: Int)
+      try $ do
+        name <- pIdent
+        _ <- symbol ":"
+        ty <- pType
+        pure $ BinderParam (Binder name (Just ty))
+    , -- Type parameter with kind annotation: {α : ∀α.α}
+      try $ do
+        name <- pIdent
+        _ <- symbol ":"
+        kind <- pKind
+        pure $ TypeParam name kind
+    , -- Binder parameter without type annotation: (x)
+      do
+        name <- pIdent
+        pure $ BinderParam (Binder name Nothing)
+    ]
 
 -- Parse a function declaration:
 -- def siteBound {@Site} (ptr: Ptr Int {@Site}) : Int := ...
@@ -355,23 +374,71 @@ pFunctionDecl = do
   pure $
     FunctionDecl $
       FunctionDeclaration
-        { funcName
-        , funcParams
-        , funcReturnType = returnType
-        , funcBody = body
-        }
+        funcName
+        funcParams
+        returnType
+        body
 
-pSiteCover :: Parser String
-pSiteCover = symbol "~" *> pIdent
+-- Parse an instance signature in a typeclass declaration:
+-- eq : a -> a -> Bool
+pInstanceSig :: Parser (String, Ty)
+pInstanceSig = do
+  name <- pIdent
+  _ <- symbol ":"
+  ty <- pType
+  pure (name, ty)
 
-pSitePath :: Parser SiteMorphism
+-- Parse a typeclass declaration:
+-- class Eq a where
+--   eq : a -> a -> Bool
+pClassDecl :: Parser Decl
+pClassDecl = do
+  _ <- symbol "class"
+  className <- pIdent
+  tyParams <- many pTyVarBinder
+  _ <- symbol "where"
+  methods <- many pInstanceSig
+  pure $
+    ClassDecl $
+      ClassDeclaration
+        className
+        tyParams
+        methods
+
+-- Parse a typeclass instance declaration:
+-- instance Eq : Int where
+--   def eq (x: Int) (y: Int): Bool := x == y
+pClassInstanceDecl :: Parser Decl
+pClassInstanceDecl = do
+  _ <- symbol "instance"
+  className <- pIdent
+  _ <- symbol ":"
+  tyArgs <- many pType
+  _ <- symbol "where"
+  methods <- many pFunctionDecl
+  methods' <- mapM extractFunctionDecl methods
+
+  pure $
+    ClassInstanceDecl $
+      ClassInstance
+        className
+        tyArgs
+        methods'
+ where
+  extractFunctionDecl :: Decl -> Parser FunctionDeclaration
+  extractFunctionDecl (FunctionDecl fd) = pure fd
+  extractFunctionDecl _ = fail "Expected a function declaration in class instance"
+
+-- Parse a site path:
+-- f: ~a -> ~b
+pSitePath :: Parser SitePath
 pSitePath = do
   name <- pIdent
   _ <- symbol ":"
   source <- pSiteCover
   _ <- alternativeSym "->" "→"
   target <- pSiteCover
-  pure $ SiteMorphism name source target
+  pure $ SitePath name source target
 
 -- Parse a topological site declaration:
 -- site MySite where
@@ -389,7 +456,15 @@ pSiteDecl = do
   siteCovers <- brackets (pSiteCover `sepBy` symbol ",")
   _ <- symbol "paths:"
   sitePaths <- many pSitePath
-  pure $ SiteDecl $ SiteDeclaration{siteName, siteCovers, sitePaths}
+  pure $
+    SiteDecl $
+      SiteDeclaration
+        siteName
+        siteCovers
+        sitePaths
+
+pSiteCover :: Parser String
+pSiteCover = symbol "~" *> pIdent
 
 parseDecl :: Parser Decl
 parseDecl =
@@ -397,6 +472,7 @@ parseDecl =
     [ try pEnumDecl
     , try pStructDecl
     , try pFunctionDecl
+    , try pClassDecl
     , try pImportDecl
     , try pSiteDecl
     ]

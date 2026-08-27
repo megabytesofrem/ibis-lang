@@ -14,8 +14,10 @@ module Ibis.Syntax.AST.Surface
   , EnumDeclaration (..)
   , StructDeclaration (..)
   , FunctionDeclaration (..)
+  , ClassDeclaration (..)
+  , ClassInstance (..)
   , SiteDeclaration (..)
-  , SiteMorphism (..)
+  , SitePath (..)
   )
 where
 
@@ -61,18 +63,14 @@ data Expr
 -- DECLARATION NODES
 ---------------------------------------------
 
--- A morphism in a topological site
-data SiteMorphism = SiteMorphism
-  { morphismName :: String
-  , morphismSource :: String
-  , morphismTarget :: String
-  }
+-- A path in a topological site
+data SitePath = SitePath String String String
   deriving (Show, Eq)
 
 -- Function parameters can be binders or type parameters (polymorphism)
 data FunctionParam
   = BinderParam Binder
-  | TypeParam String -- e.g., a type variable 'α'
+  | TypeParam String Kind -- e.g., a type variable 'α'
   deriving (Show, Eq)
 
 -- Enum constructor with fields, e.g., Some Int, Error String
@@ -102,10 +100,24 @@ data FunctionDeclaration = FunctionDeclaration
   }
   deriving (Show, Eq)
 
+data ClassDeclaration = ClassDeclaration
+  { className :: String
+  , classTypeParams :: [(String, Kind)]
+  , classMethods :: [(String, Ty)]
+  }
+  deriving (Show, Eq)
+
+data ClassInstance = ClassInstance
+  { instanceClassName :: String
+  , instanceTypeArgs :: [Ty]
+  , instanceMethods :: [FunctionDeclaration]
+  }
+  deriving (Show, Eq)
+
 data SiteDeclaration = SiteDeclaration
   { siteName :: String
   , siteCovers :: [String]
-  , sitePaths :: [SiteMorphism]
+  , sitePaths :: [SitePath]
   }
   deriving (Show, Eq)
 
@@ -114,6 +126,8 @@ data Decl
   | EnumDecl EnumDeclaration
   | StructDecl StructDeclaration
   | FunctionDecl FunctionDeclaration
+  | ClassDecl ClassDeclaration
+  | ClassInstanceDecl ClassInstance
   | SiteDecl SiteDeclaration
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
@@ -263,8 +277,8 @@ instance Prettyprint Pat where
     restStr <- pretty rest
     pure $ first <> " :: " <> restStr
 
-instance Prettyprint SiteMorphism where
-  pretty (SiteMorphism name source target) = do
+instance Prettyprint SitePath where
+  pretty (SitePath name source target) = do
     pure $ name <> " : " <> source <> " -> " <> target
 
 instance Prettyprint SiteDeclaration where
@@ -302,7 +316,7 @@ instance Prettyprint StructDeclaration where
 
 instance Prettyprint FunctionParam where
   pretty (BinderParam binder) = pretty binder
-  pretty (TypeParam name) = pure name
+  pretty (TypeParam name kind) = pure $ name <> " : " <> show kind
 
 instance Prettyprint FunctionDeclaration where
   pretty (FunctionDeclaration name params mty body) = do
