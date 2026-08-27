@@ -1,6 +1,6 @@
 site MemorySite where
   covers: [~a]
-  morphisms:
+  paths:
     a_identity: ~a -> ~a
 
 struct MemoryStruct {σ : @MemorySite} {α : ∀α.α} where

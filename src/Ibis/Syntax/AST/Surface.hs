@@ -101,7 +101,7 @@ data FunctionDeclaration = FunctionDeclaration
 data SiteDeclaration = SiteDeclaration
   { siteName :: String
   , siteCovers :: [String]
-  , siteMorphisms :: [SiteMorphism]
+  , sitePaths :: [SiteMorphism]
   }
   deriving (Show, Eq)
 

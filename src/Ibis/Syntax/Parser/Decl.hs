@@ -313,8 +313,8 @@ pFunctionDecl = do
 pSiteCover :: Parser String
 pSiteCover = symbol "~" *> pIdent
 
-pSiteMorphism :: Parser SiteMorphism
-pSiteMorphism = do
+pSitePath :: Parser SiteMorphism
+pSitePath = do
   name <- pIdent
   _ <- symbol ":"
   source <- pSiteCover
@@ -325,7 +325,7 @@ pSiteMorphism = do
 -- Parse a topological site declaration:
 -- site MySite where
 --   covers: [~a, ~b]
---   morphisms:
+--   paths:
 --     f: ~a -> ~b
 --     g: ~b -> ~a
 pSiteDecl :: Parser Decl
@@ -336,9 +336,9 @@ pSiteDecl = do
 
   _ <- symbol "covers:"
   siteCovers <- brackets (pSiteCover `sepBy` symbol ",")
-  _ <- symbol "morphisms:"
-  siteMorphisms <- many pSiteMorphism
-  pure $ SiteDecl $ SiteDeclaration{siteName, siteCovers, siteMorphisms}
+  _ <- symbol "paths:"
+  sitePaths <- many pSitePath
+  pure $ SiteDecl $ SiteDeclaration{siteName, siteCovers, sitePaths}
 
 parseDecl :: Parser Decl
 parseDecl =

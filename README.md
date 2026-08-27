@@ -1,3 +1,3 @@
 # Ibis
 
-Small purely functional programming language, with the end goal of being an experiment to play around with categorical memory safety semantics.
+Ibis is an experimental programming language designed to explore the application of category theory to memory safety
