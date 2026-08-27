@@ -28,12 +28,19 @@ newtype TypecheckM env a = TypecheckM
 data TypecheckEnv = TypecheckEnv
   { typeEnv :: [Core.Ty]
   , termEnv :: [(String, Core.Ty)]
+  , tyVarNameEnv :: [String]
+  -- ^ Environment for type variable names, used for pretty-printing
   }
   deriving (Show, Eq)
 
 -- | Create a new empty typechecking environment
 mkTypecheckEnv :: TypecheckEnv
-mkTypecheckEnv = TypecheckEnv{typeEnv = [], termEnv = defaultTermEnv}
+mkTypecheckEnv =
+  TypecheckEnv
+    { typeEnv = []
+    , termEnv = defaultTermEnv
+    , tyVarNameEnv = []
+    }
 
 defaultTermEnv :: [(String, Core.Ty)]
 defaultTermEnv =

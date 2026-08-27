@@ -12,7 +12,7 @@ module Ibis.Syntax.AST.Surface
   , FunctionParam (..)
   , EnumConstructor (..)
   , EnumDeclaration (..)
-  , RecordDeclaration (..)
+  , StructDeclaration (..)
   , FunctionDeclaration (..)
   , SiteDeclaration (..)
   , SiteMorphism (..)
@@ -84,9 +84,9 @@ data EnumDeclaration = EnumDeclaration
   }
   deriving (Show, Eq)
 
-data RecordDeclaration = RecordDeclaration
-  { recordName :: String
-  , recordFields :: [(String, Ty)]
+data StructDeclaration = StructDeclaration
+  { structName :: String
+  , structFields :: [(String, Ty)]
   }
   deriving (Show, Eq)
 
@@ -108,7 +108,7 @@ data SiteDeclaration = SiteDeclaration
 data Decl
   = ExprDecl Expr
   | EnumDecl EnumDeclaration
-  | RecordDecl RecordDeclaration
+  | StructDecl StructDeclaration
   | FunctionDecl FunctionDeclaration
   | SiteDecl SiteDeclaration
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
@@ -281,8 +281,8 @@ instance Prettyprint EnumDeclaration where
     let ctorsStr = unwords (intersperse ", " ctorsStrs)
     pure $ "enum " <> name <> " = " <> ctorsStr
 
-instance Prettyprint RecordDeclaration where
-  pretty (RecordDeclaration name fields) = do
+instance Prettyprint StructDeclaration where
+  pretty (StructDeclaration name fields) = do
     fieldsStrs <-
       mapM
         (\(fname, ftype) -> prettyField (fname, ftype))
@@ -319,9 +319,9 @@ instance Prettyprint Decl where
   pretty (EnumDecl enumDecl) = do
     enumDeclStr <- pretty enumDecl
     pure $ enumDeclStr <> ";"
-  pretty (RecordDecl recordDecl) = do
-    recordDeclStr <- pretty recordDecl
-    pure $ recordDeclStr <> ";"
+  pretty (StructDecl structDecl) = do
+    structDeclStr <- pretty structDecl
+    pure $ structDeclStr <> ";"
   pretty (FunctionDecl funcDecl) = do
     funcDeclStr <- pretty funcDecl
     pure $ funcDeclStr <> ";"

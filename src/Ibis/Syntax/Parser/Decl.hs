@@ -128,12 +128,12 @@ pMatchArm = do
   expr <- parseExpr
   pure (pat, expr)
 
--- Match expression: match expr: | pat1 -> expr1 | pat2 -> expr2
+-- Match expression: match expr with | pat1 -> expr1 | pat2 -> expr2
 pMatch :: Parser Expr
 pMatch = do
   _ <- symbol "match"
   expr <- parseExpr
-  _ <- symbol ":"
+  _ <- symbol "with"
   firstArm <- (optional (symbol "|") >> pMatchArm)
   restArms <- many (symbol "|" >> pMatchArm)
   let arms = firstArm : restArms
@@ -217,27 +217,27 @@ pField = do
   ty <- pType
   pure (name, ty)
 
--- Parse a record declaration:
---  record Foo:
+-- Parse a struct declaration:
+--  record Foo where
 --   field1: Int,
 --   field2: String
-pRecordDecl :: Parser Decl
-pRecordDecl = do
-  _ <- symbol "record"
+pStructDecl :: Parser Decl
+pStructDecl = do
+  _ <- symbol "struct"
   name <- pCtorName
-  _ <- symbol ":"
+  _ <- symbol "where"
   fields <- pField `sepBy1` symbol ","
-  pure $ RecordDecl $ RecordDeclaration name fields
+  pure $ StructDecl $ StructDeclaration name fields
 
 -- Parse an enum declaration:
--- enum Option {α : ∀α. Option α}:
+-- enum Option {α : ∀α. Option α} where
 --   | Some α
 --   | None
 pEnumDecl :: Parser Decl
 pEnumDecl = do
   _ <- symbol "enum"
   name <- pCtorName
-  _ <- symbol ":"
+  _ <- symbol "where"
   constructors <- some parseConstructor
   pure $ EnumDecl $ EnumDeclaration name constructors
  where
@@ -323,7 +323,7 @@ pSiteMorphism = do
   pure $ SiteMorphism name source target
 
 -- Parse a topological site declaration:
--- site MySite where:
+-- site MySite where
 --   covers: [~a, ~b]
 --   morphisms:
 --     f: ~a -> ~b
@@ -332,7 +332,7 @@ pSiteDecl :: Parser Decl
 pSiteDecl = do
   _ <- symbol "site"
   siteName <- pIdent
-  _ <- symbol "where:"
+  _ <- symbol "where"
 
   _ <- symbol "covers:"
   siteCovers <- brackets (pSiteCover `sepBy` symbol ",")
@@ -344,7 +344,7 @@ parseDecl :: Parser Decl
 parseDecl =
   choice
     [ try pEnumDecl
-    , try pRecordDecl
+    , try pStructDecl
     , try pFunctionDecl
     , try pImportDecl
     , try pSiteDecl
