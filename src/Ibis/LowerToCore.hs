@@ -20,6 +20,7 @@ import Control.Monad.Reader.Class (MonadReader (..))
 
 import Ibis.Syntax.AST.Core (Debrujin)
 import Ibis.Syntax.AST.Core qualified as Core
+import Ibis.Syntax.AST.Kind (Kind (..))
 import Ibis.Syntax.AST.Surface (Pat (..))
 import Ibis.Syntax.AST.Surface qualified as Surf
 
@@ -85,15 +86,23 @@ lowerTy Surf.TFloat = pure Core.TFloat
 lowerTy Surf.TBool = pure Core.TBool
 lowerTy Surf.TString = pure Core.TString
 lowerTy Surf.TUnit = pure Core.TUnit
-lowerTy (Surf.TVar name) = lookupTypeM name >>= \idx -> pure $ Core.TVar idx
+lowerTy (Surf.TVar name mkind) = do
+  idx <- lookupTypeM name
+
+  -- If the kind is not provided, default to KStar.
+  let kind = case mkind of
+        Just k -> k
+        Nothing -> KStar
+
+  pure $ Core.TVar idx kind
 lowerTy (Surf.TFunc arg ret) = do
   loweredArg <- lowerTy arg
   loweredRet <- lowerTy ret
   pure $ Core.TFunc loweredArg loweredRet
-lowerTy (Surf.TForall name ty) = do
+lowerTy (Surf.TForall name kind ty) = do
   let newCtx = LowerCtx{termEnv = termEnv mkLowerCtx, typeEnv = name : typeEnv mkLowerCtx}
   loweredTy <- local (const newCtx) (lowerTy ty)
-  pure $ Core.TForall loweredTy
+  pure $ Core.TForall kind loweredTy
 lowerTy (Surf.TApp t1 t2) = do
   loweredT1 <- lowerTy t1
   loweredT2 <- lowerTy t2

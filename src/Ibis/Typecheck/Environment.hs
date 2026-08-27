@@ -7,6 +7,7 @@ import Control.Monad.Except (Except, MonadError (..))
 import Control.Monad.Reader (MonadReader (..), ReaderT)
 
 import Ibis.Syntax.AST.Core qualified as Core
+import Ibis.Syntax.AST.Kind (Kind (..))
 
 -- | TypecheckM monad with access to a type environment and the ability to throw errors
 --
@@ -46,11 +47,11 @@ defaultTermEnv :: [(String, Core.Ty)]
 defaultTermEnv =
   [ ("True", Core.TBool)
   , ("False", Core.TBool)
-  , ("Nil", Core.TCons "List" [Core.TVar 0]) -- List a
+  , ("Nil", Core.TCons "List" [Core.TVar 0 KStar]) -- List a
   ,
     ( "Cons"
     , Core.TFunc
-        (Core.TVar 0)
-        (Core.TFunc (Core.TCons "List" [Core.TVar 0]) (Core.TCons "List" [Core.TVar 0])) -- a -> List a -> List a
+        (Core.TVar 0 KStar)
+        (Core.TFunc (Core.TCons "List" [Core.TVar 0 KStar]) (Core.TCons "List" [Core.TVar 0 KStar])) -- a -> List a -> List a
     )
   ]

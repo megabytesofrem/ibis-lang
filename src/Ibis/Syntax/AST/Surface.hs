@@ -21,6 +21,7 @@ where
 
 import Data.List (intersperse)
 import Ibis.Prettyprint
+import Ibis.Syntax.AST.Kind (Kind)
 import Ibis.Syntax.AST.Operator (Binop, Unop)
 
 -------------------------------------------------------------
@@ -129,8 +130,8 @@ data Ty
   | TString
   | TUnit
   | TFunc Ty Ty -- Function type, e.g. Int -> Int
-  | TVar String -- Type variable, e.g. a
-  | TForall String Ty -- forall a. a -> a
+  | TVar String (Maybe Kind) -- Type variable, e.g. a or f : * -> *
+  | TForall String Kind Ty -- forall (a : k). T
   | TApp Ty Ty -- Type application, e.g. Maybe Int
   | TCons String [Ty] -- Type constructor with parameters
   deriving (Show, Eq)
@@ -228,10 +229,11 @@ instance Prettyprint Ty where
     t1Str <- pretty t1
     t2Str <- pretty t2
     pure $ "(" <> t1Str <> " -> " <> t2Str <> ")"
-  pretty (TVar name) = pure name
-  pretty (TForall var ty) = do
+  pretty (TVar name Nothing) = pure name
+  pretty (TVar name (Just kind)) = pure $ name <> " : " <> show kind
+  pretty (TForall var kind ty) = do
     tyStr <- pretty ty
-    pure $ "(forall " <> var <> ". " <> tyStr <> ")"
+    pure $ "(forall (" <> var <> " : " <> show kind <> "). " <> tyStr <> ")"
   pretty (TApp t1 t2) = do
     t1Str <- pretty t1
     t2Str <- pretty t2

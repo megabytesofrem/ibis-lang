@@ -11,6 +11,7 @@ module Ibis.Syntax.AST.Core
   )
 where
 
+import Ibis.Syntax.AST.Kind (Kind (..))
 import Ibis.Syntax.AST.Surface (Literal (..), Pat (..))
 
 -- | Debrujin index for variables and type variables.
@@ -22,9 +23,9 @@ data Ty
   | TBool
   | TString
   | TUnit
-  | TVar Debrujin -- Type variable
+  | TVar Debrujin Kind -- Type variable, e.g. a : *, f : * -> *
   | TFunc Ty Ty -- Function type, e.g. Int -> Int
-  | TForall Ty -- forall a. a -> a
+  | TForall Kind Ty -- forall a. a -> a
   | TLam Debrujin Ty -- Type-level lambda, e.g. Λ(a:k). T
   | TApp Ty Ty -- Type application, e.g. Maybe Int
   | TCons String [Ty] -- Type constructor with parameters

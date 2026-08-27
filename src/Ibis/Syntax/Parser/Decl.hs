@@ -17,6 +17,7 @@ import Data.List (intercalate)
 import Text.Megaparsec
 
 import Ibis.Syntax.AST
+import Ibis.Syntax.AST.Kind (Kind (KStar))
 import Ibis.Syntax.Parser.Lexer
 import Ibis.Syntax.Parser.Pattern (pPattern)
 
@@ -37,7 +38,7 @@ pAtomicTy =
     , TBool <$ symbol "Bool"
     , TString <$ symbol "String"
     , TUnit <$ symbol "Unit"
-    , TVar <$> pIdentImpl
+    , (\name -> TVar name Nothing) <$> pIdentImpl
     , parens pType
     ]
 
@@ -54,7 +55,7 @@ pAppTy =
     , try $ do
         var <- pIdent
         args <- many pAtomicTy
-        pure $ foldl' TApp (TVar var) args
+        pure $ foldl' TApp (TVar var Nothing) args
     , pAtomicTy
     ]
 
@@ -65,7 +66,7 @@ pForAll = do
   tvars <- some pIdentImpl
   _ <- symbol "."
   ty <- pArrowTy
-  pure $ foldr TForall ty tvars
+  pure $ foldr (\name acc -> TForall name KStar acc) ty tvars
 
 -- Arrow types: Int -> Int, Maybe Int -> Bool
 pArrowTy :: Parser Ty

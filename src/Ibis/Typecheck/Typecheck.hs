@@ -11,6 +11,7 @@ import Control.Monad (forM, forM_, unless)
 
 import Ibis.Syntax.AST.Core (Debrujin)
 import Ibis.Syntax.AST.Core qualified as Core
+import Ibis.Syntax.AST.Kind (Kind (..))
 import Ibis.Syntax.AST.Surface qualified as AST
 import Ibis.Typecheck.Environment (TypecheckEnv (..), TypecheckM (..))
 
@@ -60,15 +61,15 @@ withTerm name ty = local (\env -> env{termEnv = (name, ty) : termEnv env})
 -- System F
 -------------------------------------------------------------
 
-tyMap :: (Int -> Int -> Core.Ty) -> Int -> Core.Ty -> Core.Ty
+tyMap :: (Int -> Int -> Kind -> Core.Ty) -> Int -> Core.Ty -> Core.Ty
 tyMap f idx ty = walk ty
  where
   -- Walk through the type and apply the mapping function to type variables
-  walk t@(Core.TVar n)
-    | n == idx = f idx n
+  walk t@(Core.TVar n kind)
+    | n == idx = f idx n kind
     | otherwise = t
   walk (Core.TFunc t1 t2) = Core.TFunc (walk t1) (walk t2)
-  walk (Core.TForall t) = Core.TForall (walk t)
+  walk (Core.TForall kind t) = Core.TForall kind (walk t)
   walk (Core.TLam n t) = Core.TLam n (walk t)
   walk (Core.TApp t1 t2) = Core.TApp (walk t1) (walk t2)
   walk (Core.TCons name tys) = Core.TCons name (map walk tys)
@@ -77,17 +78,17 @@ tyMap f idx ty = walk ty
 tyShift :: Int -> Core.Ty -> Core.Ty
 tyShift d = tyMap shiftVar d
  where
-  shiftVar cut idx
-    | idx >= cut = Core.TVar (idx + d)
-    | otherwise = Core.TVar idx
+  shiftVar cut idx kind
+    | idx >= cut = Core.TVar (idx + d) kind
+    | otherwise = Core.TVar idx kind
 
 tySubst :: Int -> Core.Ty -> Core.Ty -> Core.Ty
 tySubst j s = tyMap substVar j
  where
-  substVar cut idx
+  substVar cut idx kind
     | idx == cut = tyShift cut s
-    | idx > j + cut = Core.TVar (idx - 1)
-    | otherwise = Core.TVar idx
+    | idx > j + cut = Core.TVar (idx - 1) kind
+    | otherwise = Core.TVar idx kind
 
 ---------------------------------------------
 -- TYPE CHECKING
@@ -120,15 +121,12 @@ inferExpr = \case
   Core.EAbs body -> do
     -- Extend the type environment with a new type variable for the abstraction
     bodyTy <- withTyVar "_abs" (inferExpr body)
-    pure $ Core.TForall bodyTy
+    pure $ Core.TForall KStar bodyTy
   -- Type application e [T]: substitutes a type argument into a polymorphic type
   Core.ETyApp e tyArg -> do
     eTy <- inferExpr e
     case eTy of
-      Core.TForall bodyTy -> do
-        -- Substitute the type argument into the body type
-        let substitutedTy = tySubst 0 tyArg bodyTy
-        pure substitutedTy
+      Core.TForall kind bodyTy -> pure $ tySubst 0 tyArg bodyTy
       _ -> throwError $ "Expected a forall type, but got: " ++ show eTy
   -- Term application: e1 e2
   Core.EApp e1 e2 -> do
@@ -188,11 +186,11 @@ checkExpr expr expectedTy = case expr of
       _ -> throwError $ "Expected a function type, but got: " ++ show expectedTy
   Core.EAbs body -> do
     case expectedTy of
-      Core.TForall expectedBodyTy -> do
+      Core.TForall kind expectedBodyTy -> do
         -- Extend the type environment with a new type variable for the abstraction
         absBody <-
           withTyVar "_abs" $
-            withType (Core.TVar 0) $
+            withType (Core.TVar 0 KStar) $
               checkExpr body expectedBodyTy
 
         pure $ Core.EAbs absBody
@@ -200,7 +198,7 @@ checkExpr expr expectedTy = case expr of
   Core.ETyApp e tyArg -> do
     eTy <- inferExpr e
     case eTy of
-      Core.TForall bodyTy -> do
+      Core.TForall kind bodyTy -> do
         -- Substitute the type argument into the body type
         let substitutedTy = tySubst 0 tyArg bodyTy
         assertTy expectedTy substitutedTy
