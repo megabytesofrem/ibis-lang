@@ -47,6 +47,9 @@ data Expr
   | EBinop Binop Expr Expr
   | EList [Expr] -- [1, 2, 3]
   | ETuple [Expr] -- (1, 2, 3)
+  | ELam [String] Expr -- \x y -> expr
+  | ETyAbs [String] Expr -- /\a b -> expr (type abstraction)
+  | ETyApp Expr [Ty] -- e [Int, Bool]     (type application)
   | EApp Expr Expr -- e₁ e₂
   | ELet Binder Expr Expr -- let x = e₁ in e₂
   | EIf Expr Expr Expr -- if cond then e₁ else e₂

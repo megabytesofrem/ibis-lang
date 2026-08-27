@@ -5,7 +5,7 @@
 module Ibis.Typecheck.Typecheck where
 
 import Control.Monad.Except (MonadError (..), runExcept)
-import Control.Monad.Reader (MonadReader (..), runReaderT)
+import Control.Monad.Reader (MonadReader (..), asks, runReaderT)
 
 import Control.Monad (forM, forM_, unless)
 
@@ -14,6 +14,7 @@ import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Kind (Kind (..))
 import Ibis.Syntax.AST.Surface qualified as AST
 import Ibis.Typecheck.Environment (TypecheckEnv (..), TypecheckM (..))
+import Ibis.Typecheck.Kind (KindCheckEnv (..), assertKind, inferKind)
 
 -- | Typechecker monad (defined in Ibis.Typecheck.Environment)
 type Typechecker = TypecheckM TypecheckEnv
@@ -51,6 +52,9 @@ withType ty = local (\env -> env{typeEnv = ty : typeEnv env})
 -- computation in that extended environment.
 withTyVar :: String -> Typechecker a -> Typechecker a
 withTyVar name = local (\env -> env{tyVarNameEnv = name : tyVarNameEnv env})
+
+withKind :: Kind -> Typechecker a -> Typechecker a
+withKind k = local (\env -> env{kindCheckEnv = (kindCheckEnv env){kindEnv = k : kindEnv (kindCheckEnv env)}})
 
 -- | Extend the term environment with a new term variable, and run a new
 -- computation in that extended environment.
@@ -100,6 +104,13 @@ assertTy expected actual =
     throwError $
       "Type mismatch: expected " ++ show expected ++ ", but got " ++ show actual
 
+assertWellKinded :: Core.Ty -> Typechecker ()
+assertWellKinded ty = do
+  kEnv <- asks kindCheckEnv
+  case inferKind kEnv ty of
+    Left err -> throwError $ "Kind error: " ++ err
+    Right _ -> pure ()
+
 inferLit :: AST.Literal -> Typechecker Core.Ty
 inferLit (AST.LitInt _) = return Core.TInt
 inferLit (AST.LitFloat _) = return Core.TFloat
@@ -119,14 +130,26 @@ inferExpr = \case
     pure $ Core.TFunc argTy bodyTy
   -- Type abstraction: /\a -> body: introduces a new type variable binder
   Core.EAbs body -> do
+    let k = KStar
+
     -- Extend the type environment with a new type variable for the abstraction
-    bodyTy <- withTyVar "_abs" (inferExpr body)
-    pure $ Core.TForall KStar bodyTy
+    bodyTy <- withTyVar "_abs" $ withKind k (inferExpr body)
+    pure $ Core.TForall k bodyTy
   -- Type application e [T]: substitutes a type argument into a polymorphic type
   Core.ETyApp e tyArg -> do
+    assertWellKinded tyArg
+
     eTy <- inferExpr e
     case eTy of
-      Core.TForall kind bodyTy -> pure $ tySubst 0 tyArg bodyTy
+      Core.TForall kind bodyTy -> do
+        kEnv <- asks kindCheckEnv
+        -- Check that the kind of the type argument matches the expected kind
+        case assertKind kEnv tyArg kind of
+          Left err -> throwError $ "Kind error: " ++ err
+          Right _ -> do
+            -- Substitute the type argument into the body type
+            let substitutedTy = tySubst 0 tyArg bodyTy
+            pure substitutedTy
       _ -> throwError $ "Expected a forall type, but got: " ++ show eTy
   -- Term application: e1 e2
   Core.EApp e1 e2 -> do
@@ -190,12 +213,15 @@ checkExpr expr expectedTy = case expr of
         -- Extend the type environment with a new type variable for the abstraction
         absBody <-
           withTyVar "_abs" $
-            withType (Core.TVar 0 KStar) $
-              checkExpr body expectedBodyTy
+            withType (Core.TVar 0 kind) $
+              withKind kind $
+                checkExpr body expectedBodyTy
 
         pure $ Core.EAbs absBody
       _ -> throwError $ "Expected a forall type, but got: " ++ show expectedTy
   Core.ETyApp e tyArg -> do
+    assertWellKinded tyArg
+
     eTy <- inferExpr e
     case eTy of
       Core.TForall kind bodyTy -> do

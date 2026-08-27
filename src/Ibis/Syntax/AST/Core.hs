@@ -26,7 +26,7 @@ data Ty
   | TVar Debrujin Kind -- Type variable, e.g. a : *, f : * -> *
   | TFunc Ty Ty -- Function type, e.g. Int -> Int
   | TForall Kind Ty -- forall a. a -> a
-  | TLam Debrujin Ty -- Type-level lambda, e.g. Λ(a:k). T
+  | TLam Kind Ty -- Type-level lambda, e.g. Λ(a:k). T
   | TApp Ty Ty -- Type application, e.g. Maybe Int
   | TCons String [Ty] -- Type constructor with parameters
   deriving (Eq, Show)

@@ -36,11 +36,53 @@ assertKind env ty expectedK = do
   _ <- unifyKinds k expectedK
   Right ()
 
+-- | Infer the kind of a type, returning an error if it cannot be inferred
 inferKind :: KindCheckEnv -> Core.Ty -> Either String Kind
 inferKind _ Core.TInt = Right KStar
 inferKind _ Core.TFloat = Right KStar
-inferKind _ _ = Left "Kind inference not implemented for this type"
+inferKind _ Core.TBool = Right KStar
+inferKind _ Core.TString = Right KStar
+inferKind _ Core.TUnit = Right KStar
+inferKind env (Core.TVar idx _) = lookupKind env idx
+inferKind env (Core.TFunc arg ret) = do
+  kArg <- inferKind env arg
+  kRet <- inferKind env ret
+  unifyKinds kArg KStar >> unifyKinds kRet KStar >> Right KStar
+inferKind env (Core.TForall k ty) = do
+  kTy <- inferKind env{kindEnv = k : kindEnv env} ty
+  unifyKinds kTy KStar >> Right KStar
+inferKind env (Core.TLam k body) = do
+  kBody <- inferKind env{kindEnv = k : kindEnv env} body
+  Right (KArrow k kBody)
+inferKind env (Core.TApp t1 t2) = do
+  k1 <- inferKind env t1
+  k2 <- inferKind env t2
+  case k1 of
+    KArrow kArg kRes -> do
+      _ <- unifyKinds kArg k2
+      Right kRes
+    _ ->
+      Left $ "Expected a type constructor (* -> *), but got: " ++ show k1
+inferKind env (Core.TCons name params) = case lookup name (kindCtorEnv env) of
+  Just ctorKind -> do
+    paramKinds <- traverse (inferKind env) params
+    let expectedKind = foldr KArrow KStar paramKinds
+    _ <- unifyKinds ctorKind expectedKind
+    Right KStar
 
+  -- Unknown type constructor
+  Nothing -> Left ("Unknown type constructor: " ++ name)
+
+-- | Unify two kinds, returning an error if they cannot be unified
 unifyKinds :: Kind -> Kind -> Either String Kind
 unifyKinds KStar KStar = Right KStar
-unifyKinds _ _ = Left "Kind unification not implemented for these kinds"
+unifyKinds (KArrow k1 k2) (KArrow k1' k2') = do
+  k1'' <- unifyKinds k1 k1'
+  k2'' <- unifyKinds k2 k2'
+  Right (KArrow k1'' k2'')
+unifyKinds k1 k2 =
+  Left $ "Unification error: kind mismatch " ++ show k1 ++ " and " ++ show k2
+
+-- | Check whether a list of types all have kind *
+allStars :: KindCheckEnv -> [Core.Ty] -> Either String ()
+allStars env tys = mapM_ (\ty -> assertKind env ty KStar) tys

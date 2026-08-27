@@ -17,7 +17,7 @@ import Data.List (intercalate)
 import Text.Megaparsec
 
 import Ibis.Syntax.AST
-import Ibis.Syntax.AST.Kind (Kind (KStar))
+import Ibis.Syntax.AST.Kind (Kind (KArrow, KStar))
 import Ibis.Syntax.Parser.Lexer
 import Ibis.Syntax.Parser.Pattern (pPattern)
 
@@ -29,6 +29,24 @@ import Ibis.Syntax.Parser.Pattern (pPattern)
 pType :: Parser Ty
 pType = try pForAll <|> pArrowTy
 
+pAtomicKind :: Parser Kind
+pAtomicKind =
+  choice
+    [ KStar <$ symbol "*"
+    , parens pKind
+    ]
+
+pKindArrow :: Parser Kind
+pKindArrow = do
+  argKind <- pAtomicKind
+  rest <- optional (alternativeSym "->" "→" >> pKindArrow)
+  pure $ case rest of
+    Just retKind -> KArrow argKind retKind
+    Nothing -> argKind
+
+pKind :: Parser Kind
+pKind = pKindArrow
+
 -- An atomic type: either a primitive type or a type variable
 pAtomicTy :: Parser Ty
 pAtomicTy =
@@ -38,9 +56,16 @@ pAtomicTy =
     , TBool <$ symbol "Bool"
     , TString <$ symbol "String"
     , TUnit <$ symbol "Unit"
+    , try (parens pAnnotatedTVar)
     , (\name -> TVar name Nothing) <$> pIdentImpl
     , parens pType
     ]
+ where
+  pAnnotatedTVar = do
+    name <- pIdentImpl
+    _ <- symbol ":"
+    k <- pKind
+    pure $ TVar name (Just k)
 
 -- Type application: Maybe Int, List String, etc.
 pAppTy :: Parser Ty
@@ -59,14 +84,28 @@ pAppTy =
     , pAtomicTy
     ]
 
+-- | Parse a type variable binder: either 'a' or '(a : kind)'
+pTyVarBinder :: Parser (String, Kind)
+pTyVarBinder =
+  choice
+    [ parens $ do
+        name <- pIdentImpl
+        _ <- symbol ":"
+        k <- pKind
+        pure (name, k)
+    , do
+        name <- pIdentImpl
+        pure (name, KStar)
+    ]
+
 -- Forall types: forall a. a -> a
 pForAll :: Parser Ty
 pForAll = do
   _ <- symbol "forall" <|> symbol "∀"
-  tvars <- some pIdentImpl
+  binders <- some pTyVarBinder
   _ <- symbol "."
   ty <- pArrowTy
-  pure $ foldr (\name acc -> TForall name KStar acc) ty tvars
+  pure $ foldr (\(name, k) acc -> TForall name k acc) ty binders
 
 -- Arrow types: Int -> Int, Maybe Int -> Bool
 pArrowTy :: Parser Ty
@@ -86,6 +125,15 @@ pBinder = do
   name <- pIdent
   mty <- optional (symbol ":" >> pType)
   pure $ Binder name mty
+
+-- Lambda expression: \x y -> expr
+pLambda :: Parser Expr
+pLambda = do
+  _ <- symbol "\\"
+  binders <- some pIdent
+  _ <- alternativeSym "->" "→"
+  body <- parseExpr
+  pure $ ELam binders body
 
 pListExpr :: Parser Expr
 pListExpr = brackets (EList <$> parseExpr `sepBy` symbol ",")
@@ -151,6 +199,8 @@ pTerm =
   choice
     [ ELit <$> pLiteral
     , EVar <$> pIdent
+    , EUnit <$ symbol "()"
+    , pLambda
     , pLet
     , pIf
     , pFor

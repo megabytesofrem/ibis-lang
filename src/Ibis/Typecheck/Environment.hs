@@ -8,6 +8,7 @@ import Control.Monad.Reader (MonadReader (..), ReaderT)
 
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Kind (Kind (..))
+import Ibis.Typecheck.Kind (KindCheckEnv, mkKindCheckEnv)
 
 -- | TypecheckM monad with access to a type environment and the ability to throw errors
 --
@@ -31,6 +32,8 @@ data TypecheckEnv = TypecheckEnv
   , termEnv :: [(String, Core.Ty)]
   , tyVarNameEnv :: [String]
   -- ^ Environment for type variable names, used for pretty-printing
+  , kindCheckEnv :: KindCheckEnv
+  -- ^ Environment for kind checking
   }
   deriving (Show, Eq)
 
@@ -41,6 +44,7 @@ mkTypecheckEnv =
     { typeEnv = []
     , termEnv = defaultTermEnv
     , tyVarNameEnv = []
+    , kindCheckEnv = mkKindCheckEnv []
     }
 
 defaultTermEnv :: [(String, Core.Ty)]
