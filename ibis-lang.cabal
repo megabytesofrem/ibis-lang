@@ -47,8 +47,9 @@ library
   import: warnings
   -- Modules exported by the library.
   exposed-modules:
+    -- Ibis.LowerToCore
+    -- Ibis.Syntax.Parser.Decl
     Ibis.Kernel
-    Ibis.LowerToCore
     Ibis.Prettyprint
     Ibis.Syntax.AST
     Ibis.Syntax.AST.Core
@@ -56,13 +57,13 @@ library
     Ibis.Syntax.AST.Operator
     Ibis.Syntax.AST.Surface
     Ibis.Syntax.Parser
-    Ibis.Syntax.Parser.Decl
     Ibis.Syntax.Parser.Lexer
     Ibis.Syntax.Parser.Pattern
-    Ibis.Typecheck.Environment
-    Ibis.Typecheck.Kind
-    Ibis.Typecheck.Typecheck
 
+  -- Ibis.Typecheck.Environment
+  -- Ibis.Typecheck.Kind
+  -- Ibis.Typecheck.Typecheck
+  ----
   -- Modules included in this library but not exported.
   -- other-modules:
   -- LANGUAGE extensions used by modules in this package.

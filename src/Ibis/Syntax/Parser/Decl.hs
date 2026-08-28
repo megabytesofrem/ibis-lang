@@ -26,7 +26,7 @@ import Ibis.Syntax.Parser.Pattern (pPattern)
 ---------------------------------------------
 
 -- Parse a type
-pType :: Parser Ty
+pType :: Parser Term
 pType = try pForAll <|> pArrowTy
 
 pAtomicKind :: Parser Kind
@@ -49,7 +49,7 @@ pKind :: Parser Kind
 pKind = pKindArrow
 
 -- An atomic type: either a primitive type or a type variable
-pAtomicTy :: Parser Ty
+pAtomicTy :: Parser Term
 pAtomicTy =
   choice
     [ TInt <$ symbol "Int"
@@ -69,7 +69,7 @@ pAtomicTy =
     pure $ TVar name (Just k)
 
 -- Type application: Maybe Int, List String, etc.
-pAppTy :: Parser Ty
+pAppTy :: Parser Term
 pAppTy =
   choice
     [ try $ do
@@ -100,7 +100,7 @@ pTyVarBinder =
     ]
 
 -- Forall types: forall a. a -> a
-pForAll :: Parser Ty
+pForAll :: Parser Term
 pForAll = do
   _ <- symbol "forall" <|> symbol "∀"
   binders <- some pTyVarBinder
@@ -109,7 +109,7 @@ pForAll = do
   pure $ foldr (\(name, k) acc -> TForall name k acc) ty binders
 
 -- Arrow types: Int -> Int, Maybe Int -> Bool
-pArrowTy :: Parser Ty
+pArrowTy :: Parser Term
 pArrowTy = do
   arg <- pAppTy
   rest <- optional (alternativeSym "->" "→" >> pArrowTy)
@@ -121,26 +121,20 @@ pArrowTy = do
 -- EXPRESSION PARSERS
 ---------------------------------------------
 
-pBinder :: Parser Binder
-pBinder = do
-  name <- pIdent
-  mty <- optional (symbol ":" >> pType)
-  pure $ Binder name mty
-
 -- Lambda expression: \x y -> expr
-pLambda :: Parser Expr
+pLambda :: Parser Term
 pLambda = do
   _ <- symbol "\\"
   binders <- some pIdent
   _ <- alternativeSym "->" "→"
   body <- parseExpr
-  pure $ ELam binders body
+  pure $ Lam binders body
 
-pListExpr :: Parser Expr
+pListExpr :: Parser Term
 pListExpr = brackets (EList <$> parseExpr `sepBy` symbol ",")
 
 -- Let expression: let exp = ... in body
-pLet :: Parser Expr
+pLet :: Parser Term
 pLet = do
   _ <- symbol "let"
   binder <- pBinder
@@ -150,7 +144,7 @@ pLet = do
   ELet binder value <$> parseExpr
 
 -- If expression: if cond then e1 else e2
-pIf :: Parser Expr
+pIf :: Parser Term
 pIf = do
   _ <- symbol "if"
   cond <- parseExpr
@@ -161,7 +155,7 @@ pIf = do
   pure $ EIf cond thenExpr elseExpr
 
 -- For expression: for binder in xs: body
-pFor :: Parser Expr
+pFor :: Parser Term
 pFor = do
   _ <- symbol "for"
   binder <- pBinder
@@ -171,7 +165,7 @@ pFor = do
   body <- parseExpr
   pure $ EFor binder collection body
 
-pMatchArm :: Parser (Pat, Expr)
+pMatchArm :: Parser (Pat, Term)
 pMatchArm = do
   pat <- pPattern
   _ <- alternativeSym "->" "→"
@@ -179,7 +173,7 @@ pMatchArm = do
   pure (pat, expr)
 
 -- Match expression: match expr with | pat1 -> expr1 | pat2 -> expr2
-pMatch :: Parser Expr
+pMatch :: Parser Term
 pMatch = do
   _ <- symbol "match"
   expr <- parseExpr
@@ -189,13 +183,13 @@ pMatch = do
   let arms = firstArm : restArms
   pure $ EMatch expr arms
 
-pApply :: Parser Expr
+pApply :: Parser Term
 pApply = do
   func <- pTerm
   args <- many pTerm
   pure $ foldl' EApp func args
 
-pTerm :: Parser Expr
+pTerm :: Parser Term
 pTerm =
   choice
     [ ELit <$> pLiteral
@@ -217,22 +211,22 @@ pTerm =
       [e] -> pure e -- parenthesized expression
       es -> pure $ ETuple es
 
-parseExpr :: Parser Expr
+parseExpr :: Parser Term
 parseExpr = makeExprParser pApply operatorTable
 
-prefix :: String -> (Expr -> Expr) -> Operator Parser Expr
+prefix :: String -> (Term -> Term) -> Operator Parser Term
 prefix name f = Prefix (f <$ symbol name)
 
-infixL :: String -> (Expr -> Expr -> Expr) -> Operator Parser Expr
+infixL :: String -> (Term -> Term -> Term) -> Operator Parser Term
 infixL name f = InfixL (f <$ symbol name)
 
-infixR :: String -> (Expr -> Expr -> Expr) -> Operator Parser Expr
+infixR :: String -> (Term -> Term -> Term) -> Operator Parser Term
 infixR name f = InfixR (f <$ symbol name)
 
-infixN :: String -> (Expr -> Expr -> Expr) -> Operator Parser Expr
+infixN :: String -> (Term -> Term -> Term) -> Operator Parser Term
 infixN name f = InfixN (f <$ symbol name)
 
-operatorTable :: [[Operator Parser Expr]]
+operatorTable :: [[Operator Parser Term]]
 operatorTable =
   [
     [ prefix "-" (EUnop Negate)
@@ -262,7 +256,7 @@ operatorTable =
 -- DECLARATION PARSERS
 ---------------------------------------------
 
-pField :: Parser (String, Ty)
+pField :: Parser (String, Term)
 pField = do
   name <- pIdent
   _ <- symbol ":"
@@ -381,7 +375,7 @@ pFunctionDecl = do
 
 -- Parse an instance signature in a typeclass declaration:
 -- eq : a -> a -> Bool
-pInstanceSig :: Parser (String, Ty)
+pInstanceSig :: Parser (String, Term)
 pInstanceSig = do
   name <- pIdent
   _ <- symbol ":"
