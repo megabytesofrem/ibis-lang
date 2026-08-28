@@ -49,6 +49,7 @@ library
   exposed-modules:
     -- Ibis.LowerToCore
     -- Ibis.Syntax.Parser.Decl
+    -- Ibis.Typecheck.Kind
     Ibis.Kernel
     Ibis.Prettyprint
     Ibis.Syntax.AST
@@ -59,10 +60,10 @@ library
     Ibis.Syntax.Parser
     Ibis.Syntax.Parser.Lexer
     Ibis.Syntax.Parser.Pattern
+    Ibis.Typecheck.Environment
+    Ibis.Typecheck.Eval
+    Ibis.Typecheck.Typecheck
 
-  -- Ibis.Typecheck.Environment
-  -- Ibis.Typecheck.Kind
-  -- Ibis.Typecheck.Typecheck
   ----
   -- Modules included in this library but not exported.
   -- other-modules:
