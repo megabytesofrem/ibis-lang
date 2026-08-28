@@ -47,23 +47,21 @@ library
   import: warnings
   -- Modules exported by the library.
   exposed-modules:
-    Ibis.Syntax.AST,
-    Ibis.Syntax.AST.Surface,
-    Ibis.Syntax.AST.Core,
-    Ibis.Syntax.AST.Operator,
-    Ibis.Syntax.AST.Kind,
-
-    Ibis.Syntax.Parser,
-    Ibis.Syntax.Parser.Lexer,
-    Ibis.Syntax.Parser.Decl,
-    Ibis.Syntax.Parser.Pattern,
-
-    Ibis.Typecheck.Typecheck,
-    Ibis.Typecheck.Environment,
-    Ibis.Typecheck.Kind,
-
-    Ibis.Prettyprint,
-    Ibis.LowerToCore,
+    Ibis.Kernel
+    Ibis.LowerToCore
+    Ibis.Prettyprint
+    Ibis.Syntax.AST
+    Ibis.Syntax.AST.Core
+    Ibis.Syntax.AST.Kind
+    Ibis.Syntax.AST.Operator
+    Ibis.Syntax.AST.Surface
+    Ibis.Syntax.Parser
+    Ibis.Syntax.Parser.Decl
+    Ibis.Syntax.Parser.Lexer
+    Ibis.Syntax.Parser.Pattern
+    Ibis.Typecheck.Environment
+    Ibis.Typecheck.Kind
+    Ibis.Typecheck.Typecheck
 
   -- Modules included in this library but not exported.
   -- other-modules:
