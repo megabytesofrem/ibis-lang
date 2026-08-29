@@ -6,7 +6,7 @@ import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, asks, local)
 
 import Ibis.Syntax.AST.Core
-import Ibis.Typecheck.Eval (equal, eval, readBack)
+import Ibis.Typecheck.Eval (equal, eval, evalFst, readBack)
 
 data TypecheckCtx = TypecheckCtx
   { env :: [Value]
@@ -71,9 +71,9 @@ check term ty = case (term, ty) of
   (Lam _ _, expectedTy) -> do
     depth <- asks (length . typingCtx)
     let normExpected = readBack depth expectedTy
-     in throwError $
-          "Type mismatch: Expected a dependent function type (Pi) for lambda abstraction, but got: "
-            ++ show normExpected
+    throwError $
+      "Type mismatch: Expected a dependent function type (Pi) for lambda abstraction, but got: "
+        ++ show normExpected
   -- Pair constructor: checked against a dependent product type (Sigma)
   (Pair a b, VSigma _name dom cod) -> do
     -- Check the first component against the domain type
@@ -171,7 +171,42 @@ infer term = case term of
       universeLevel codTy
 
     pure $ VUniverse (max domLevel codLevel)
-  _ -> do
+  --
+  Fst p -> do
+    pTy <- infer p
+    case pTy of
+      VSigma _name dom cod -> pure dom
+      _ -> do
+        depth <- asks (length . typingCtx)
+        let normPty = readBack depth pTy
+        throwError $
+          "Type mismatch: Expected a dependent product type (Sigma) for fst, but got: "
+            ++ show normPty
+  Snd p -> do
+    pTy <- infer p
+    case pTy of
+      VSigma _name dom cod -> do
+        env' <- asks env
+        let pVal = eval env' p
+        pure $ cod (evalFst pVal)
+      _ -> do
+        depth <- asks (length . typingCtx)
+        let normPty = readBack depth pTy
+        throwError $
+          "Type mismatch: Expected a dependent product type (Sigma) for snd, but got: "
+            ++ show normPty
+  Pair _ _ -> do
+    env' <- asks env
     depth <- asks (length . typingCtx)
-    let normTerm = readBack depth (eval [] term)
+    let normTerm = readBack depth (eval env' term)
+    throwError $ "Cannot infer type for pair constructor: " ++ show normTerm
+  Lam _ _ -> do
+    env' <- asks env
+    depth <- asks (length . typingCtx)
+    let normTerm = readBack depth (eval env' term)
+    throwError $ "Cannot infer type for lambda abstraction: " ++ show normTerm
+  _ -> do
+    env' <- asks env
+    depth <- asks (length . typingCtx)
+    let normTerm = readBack depth (eval env' term)
     throwError $ "Cannot infer type for term (" ++ show term ++ "): " ++ show normTerm
