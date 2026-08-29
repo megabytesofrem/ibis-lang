@@ -149,7 +149,6 @@ data Pat
   | PCapture String -- x
   | PWildcard -- _
   | PTuple [Pat] -- (p1, p2, p3)
-  | PList [Pat] -- [p1, p2, p3]
   | PCtor String [Pat] -- Ctor x y
   | PPartition String Pat -- (x:xs)
   deriving (Show, Eq)
@@ -192,9 +191,6 @@ instance Prettyprint Pat where
   pretty (PTuple pats) = do
     patsStrs <- mapM pretty pats
     pure $ "(" <> unwords (intersperse ", " patsStrs) <> ")"
-  pretty (PList pats) = do
-    patsStrs <- mapM pretty pats
-    pure $ "[" <> unwords (intersperse ", " patsStrs) <> "]"
   pretty (PCtor name pats) = do
     patsStrs <- mapM pretty pats
     pure $ name <> if null pats then "" else " " <> unwords patsStrs

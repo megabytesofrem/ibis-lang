@@ -37,13 +37,22 @@ data CoreTerm
   | Pair CoreTerm CoreTerm -- (a, b)
   | Fst CoreTerm -- fst p
   | Snd CoreTerm -- snd p
-  -- Pattern Matching
+  -- Language constructs
+  | Let DeBruijn CoreTerm CoreTerm -- let x = e in body
   | Match CoreTerm [(Pat, CoreTerm)]
+  | -- Topological primitives
+    Site
+  | Cover CoreTerm CoreTerm -- Cover u v (u ⩿ v)
+  | Sect CoreTerm CoreTerm -- Sect A u
+  | Res CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- ρ_{v,u} : Sect A v -> Sect A u
+  | Ext CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- e_{u,v} : Sect A u -> Sect A v
   deriving (Eq)
 
 data Value
   = VUniverse Int -- Universe levels (types are terms, universes classify types)
   | VLit Literal
+  | VCons Value Value -- List constructor
+  | VCtor String [Value] -- Data constructor with name and arguments
   | VUnit
   | -- Dependent Functions
     VPi (Maybe String) Value Closure
@@ -51,6 +60,10 @@ data Value
   | -- Dependent Products
     VSigma (Maybe String) Value Closure
   | VPair Value Value
+  | -- Topological primitives
+    VSite
+  | VCover Value Value
+  | VSect Value Value
   | -- Stuck
     VNeutral Value Neutral
 
@@ -62,6 +75,8 @@ data Neutral
   | NFst Neutral
   | NSnd Neutral
   | NMatch Neutral [(Pat, Value)]
+  | NRes Value Value Value Value Neutral
+  | NExt Value Value Value Value Neutral
 
 data CoreDef = CoreDef
   { defName :: String -- String retained for diagnostic & symbol linking
