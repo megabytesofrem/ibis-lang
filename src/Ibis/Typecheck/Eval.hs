@@ -1,3 +1,7 @@
+{- |
+  Module      : Ibis.Typecheck.Eval
+  Description : Evaluation of dependent terms in the core language and read-backs
+-}
 module Ibis.Typecheck.Eval where
 
 import Control.Monad (zipWithM)
@@ -58,7 +62,7 @@ eval env term = case term of
   -- Pattern Matching
   Match e branches -> evalMatch env (eval env e) branches
   -- Topological Presheaf Primitives
-  Site -> VSite
+  Site name -> VSite name
   Cover u v -> VCover (eval env u) (eval env v)
   Sect a u -> VSect (eval env a) (eval env u)
   Res a u v proof s -> evalRes (eval env a) (eval env u) (eval env v) (eval env proof) (eval env s)
@@ -188,7 +192,7 @@ readBack depth val = case val of
         cod' = cod fresh
      in Sigma name (readBack depth dom) (readBack (depth + 1) cod')
   VPair a b -> Pair (readBack depth a) (readBack depth b)
-  VSite -> Site
+  VSite name -> Site name
   VCover u v -> Cover (readBack depth u) (readBack depth v)
   VSect a u -> Sect (readBack depth a) (readBack depth u)
   VNeutral ty neu -> readBackNeutral depth ty neu

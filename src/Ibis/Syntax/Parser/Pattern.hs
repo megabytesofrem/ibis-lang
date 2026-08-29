@@ -17,11 +17,6 @@ tuplePattern = do
     [p] -> pure p -- Single pattern in parentheses is just that pattern
     ps -> pure $ PTuple ps -- A tuple pattern
 
-listPattern :: Parser Pat
-listPattern = do
-  patterns <- enclosed '[' ']' $ pPattern `sepBy` symbol ","
-  pure $ PList patterns
-
 partitionPattern :: Parser Pat
 partitionPattern = do
   first <- pIdent <|> symbol "_"
@@ -44,5 +39,4 @@ pPattern =
     , try capturePattern
     , try partitionPattern
     , try tuplePattern
-    , try listPattern
     ]

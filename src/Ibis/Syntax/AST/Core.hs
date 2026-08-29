@@ -1,4 +1,7 @@
--- | Core AST for the Ibis programming language.
+{- |
+  Module      : Ibis.Syntax.AST.Core
+  Description : Core syntax of the Ibis language
+-}
 module Ibis.Syntax.AST.Core
   ( -- * Debruijn indices
     DeBruijn
@@ -41,7 +44,7 @@ data CoreTerm
   | Let DeBruijn CoreTerm CoreTerm -- let x = e in body
   | Match CoreTerm [(Pat, CoreTerm)]
   | -- Topological primitives
-    Site
+    Site DeBruijn -- A topological site
   | Cover CoreTerm CoreTerm -- Cover u v (u ⩿ v)
   | Sect CoreTerm CoreTerm -- Sect A u
   | Res CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- ρ_{v,u} : Sect A v -> Sect A u
@@ -61,7 +64,7 @@ data Value
     VSigma (Maybe String) Value Closure
   | VPair Value Value
   | -- Topological primitives
-    VSite
+    VSite DeBruijn
   | VCover Value Value
   | VSect Value Value
   | -- Stuck

@@ -5,9 +5,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{- | Core kernel for Ibis.
-This module defines the custom categories, functors, presheaves and constructs related
-to Ibis' categorical semantics.
+{- |
+  Module      : Ibis.Kernel
+  Description : Core categorical kernel structures for Ibis' type system
 -}
 module Ibis.Kernel
   ( -- * Categories and Functors

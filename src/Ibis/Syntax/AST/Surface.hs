@@ -1,4 +1,7 @@
--- | Surface AST for the Ibis programming language.
+{- |
+  Module      : Ibis.Syntax.AST.Surface
+  Description : Surface syntax AST for the Ibis language
+-}
 module Ibis.Syntax.AST.Surface
   ( Literal (..)
   , Term (..)
@@ -7,21 +10,18 @@ module Ibis.Syntax.AST.Surface
   , Pat (..)
 
     -- * Declarations
-  , FunctionParam (..)
-  , EnumConstructor (..)
-  , EnumDeclaration (..)
-  , StructDeclaration (..)
-  , FunctionDeclaration (..)
-  , ClassDeclaration (..)
-  , ClassInstance (..)
+  , Param (..)
+  , StructDecl (..)
+  , InductiveCtor (..)
+  , InductiveDecl (..)
+  , CoverRule (..)
   , SiteDeclaration (..)
   , SitePath (..)
   )
 where
 
-import Data.List (intersperse)
-import Ibis.Prettyprint
-import Ibis.Syntax.AST.Kind (Kind)
+-- import Data.List (intersperse)
+-- import Ibis.Prettyprint
 import Ibis.Syntax.AST.Operator (Binop, Unop)
 
 -------------------------------------------------------------
@@ -57,81 +57,69 @@ data Term
     Unop Unop Term
   | Binop Binop Term Term
   | List [Term] -- [1, 2, 3]
-  | Tuple [Term] -- (1, 2, 3)
   | If Term Term Term -- if cond then e1 else e2
   | For String Term Term -- for x in e1: e2
   | Match Term [(Pat, Term)] -- match e with | pat -> e
+  | -- Topological Presheaf Primitives
+    Site String -- A topological site
+  | Cover Term Term -- Cover u v (u ⩿ v)
+  | Sect Term Term -- Sect A u
+  | Res Term Term -- ρ_{v,u} : Sect A v -> Sect A u
+  | Ext Term Term Term -- e_{u,v} : Sect A u -> Sect A v
   deriving (Show, Eq)
 
 ---------------------------------------------
 -- DECLARATION NODES
 ---------------------------------------------
 
+data Param = Param
+  { paramName :: String
+  , paramType :: Term
+  }
+  deriving (Show, Eq)
+
 -- A path in a topological site
 data SitePath = SitePath String String String
   deriving (Show, Eq)
 
--- Function parameters can be binders or type parameters (polymorphism)
-data FunctionParam
-  = BinderParam Term
-  | TypeParam String Kind
-  deriving (Show, Eq)
-
--- Enum constructor with fields, e.g., Some Int, Error String
-data EnumConstructor = EnumConstructor
-  { enumCtorName :: String
-  , enumCtorFields :: [Term]
-  }
-  deriving (Show, Eq)
-
-data EnumDeclaration = EnumDeclaration
-  { enumName :: String
-  , enumConstructors :: [EnumConstructor]
-  }
-  deriving (Show, Eq)
-
-data StructDeclaration = StructDeclaration
+data StructDecl = StructDecl
   { structName :: String
+  , structParams :: [Param]
   , structFields :: [(String, Term)]
   }
   deriving (Show, Eq)
 
-data FunctionDeclaration = FunctionDeclaration
-  { funcName :: String
-  , funcParams :: [FunctionParam]
-  , funcReturnType :: Maybe Term
-  , funcBody :: Term
+data InductiveCtor = InductiveCtor
+  { ctorName :: String
+  , ctorType :: Term
   }
   deriving (Show, Eq)
 
-data ClassDeclaration = ClassDeclaration
-  { className :: String
-  , classTypeParams :: [(String, Kind)]
-  , classMethods :: [(String, Term)]
+data InductiveDecl = InductiveDecl
+  { indName :: String
+  , indParams :: [Param]
+  , indArity :: Term -- Index arity + universe level
+  , indConstructors :: [InductiveCtor]
   }
   deriving (Show, Eq)
 
-data ClassInstance = ClassInstance
-  { instanceClassName :: String
-  , instanceTypeArgs :: [Term]
-  , instanceMethods :: [FunctionDeclaration]
+data CoverRule = CoverRule
+  { parentSite :: String
+  , childSites :: [String]
   }
   deriving (Show, Eq)
 
 data SiteDeclaration = SiteDeclaration
   { siteName :: String
-  , siteCovers :: [String]
+  , siteCovers :: [CoverRule]
   , sitePaths :: [SitePath]
   }
   deriving (Show, Eq)
 
 data Decl
-  = ExprDecl Term
-  | EnumDecl EnumDeclaration
-  | StructDecl StructDeclaration
-  | FunctionDecl FunctionDeclaration
-  | ClassDecl ClassDeclaration
-  | ClassInstanceDecl ClassInstance
+  = TermDecl Term
+  | StructDecl' StructDecl
+  | InductiveDecl' InductiveDecl
   | SiteDecl SiteDeclaration
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
@@ -156,128 +144,3 @@ data Pat
 ---------------------------------------------
 -- PRETTYPRINT INSTANCES
 ---------------------------------------------
-
-instance Prettyprint Literal where
-  pretty (LitInt n) = pure $ show n
-  pretty (LitFloat f) = pure $ show f
-  pretty (LitBool b) = pure $ if b then "true" else "false"
-  pretty (LitString s) = pure $ show s
-
-instance Prettyprint Term where
-  pretty (Universe n) = pure $ "Type" <> show n
-  pretty (Var name) = pure name
-  pretty (Lit lit) = pretty lit
-  pretty Unit = pure "()"
-  pretty (Pi x a b) = do
-    aStr <- pretty a
-    bStr <- pretty b
-    pure $ "Π(" <> x <> " : " <> aStr <> "). " <> bStr
-  pretty (Lam x a e) = do
-    aStr <- pretty a
-    eStr <- pretty e
-    pure $ "λ(" <> x <> " : " <> aStr <> "). " <> eStr
-  pretty (App e1 e2) = do
-    e1Str <- pretty e1
-    e2Str <- pretty e2
-    pure $ "(" <> e1Str <> " " <> e2Str <> ")"
-  pretty _ = pure "<unimplemented prettyprint for this Term constructor>"
-
--- Add more cases for other Term constructors as needed.
-
-instance Prettyprint Pat where
-  pretty (PLit lit) = pretty lit
-  pretty (PCapture name) = pure name
-  pretty PWildcard = pure "_"
-  pretty (PTuple pats) = do
-    patsStrs <- mapM pretty pats
-    pure $ "(" <> unwords (intersperse ", " patsStrs) <> ")"
-  pretty (PCtor name pats) = do
-    patsStrs <- mapM pretty pats
-    pure $ name <> if null pats then "" else " " <> unwords patsStrs
-  pretty (PPartition first rest) = do
-    restStr <- pretty rest
-    pure $ first <> " :: " <> restStr
-
-instance Prettyprint SitePath where
-  pretty (SitePath name source target) = do
-    pure $ name <> " : " <> source <> " -> " <> target
-
-instance Prettyprint SiteDeclaration where
-  pretty (SiteDeclaration name covers morphisms) = do
-    coversStr <- pure $ unwords (intersperse ", " covers)
-    morphismsStrs <- mapM pretty morphisms
-    let morphismsStr = unlines morphismsStrs
-    pure $ "site " <> name <> " covering (" <> coversStr <> "):\n" <> morphismsStr
-
-instance Prettyprint EnumConstructor where
-  pretty (EnumConstructor name fields) = do
-    fieldsStrs <- mapM pretty fields
-    let fieldsStr = unwords fieldsStrs
-    pure $ name <> if null fields then "" else " " <> fieldsStr
-
-instance Prettyprint EnumDeclaration where
-  pretty (EnumDeclaration name ctors) = do
-    ctorsStrs <- mapM pretty ctors
-    let ctorsStr = unwords (intersperse ", " ctorsStrs)
-    pure $ "enum " <> name <> " = " <> ctorsStr
-
-instance Prettyprint StructDeclaration where
-  pretty (StructDeclaration name fields) = do
-    fieldsStrs <-
-      mapM
-        (\(fname, ftype) -> prettyField (fname, ftype))
-        fields
-
-    let fieldsStr = unlines fieldsStrs
-    pure $ "record " <> name <> " {\n" <> fieldsStr <> "}"
-   where
-    prettyField (fname, ftype) = do
-      ftypeStr <- pretty ftype
-      pure $ fname <> ": " <> ftypeStr
-
-instance Prettyprint FunctionParam where
-  pretty (BinderParam binder) = pretty binder
-  pretty (TypeParam name kind) = pure $ name <> " : " <> show kind
-
-instance Prettyprint FunctionDeclaration where
-  pretty (FunctionDeclaration name params mty body) = do
-    paramsStrs <- mapM pretty params
-    let paramsStr = unwords paramsStrs
-    tyStr <- case mty of
-      Just ty -> do
-        tyStr' <- pretty ty
-        pure $ ": " <> tyStr'
-      Nothing -> pure ""
-    bodyStr <- withIndentCtx $ pretty body >>= indentBlock
-
-    pure $ name <> " " <> paramsStr <> tyStr <> " =\n" <> bodyStr
-
-instance Prettyprint Decl where
-  pretty (ExprDecl expr) = do
-    exprStr <- pretty expr
-    pure $ exprStr <> ";"
-  pretty (EnumDecl enumDecl) = do
-    enumDeclStr <- pretty enumDecl
-    pure $ enumDeclStr <> ";"
-  pretty (StructDecl structDecl) = do
-    structDeclStr <- pretty structDecl
-    pure $ structDeclStr <> ";"
-  pretty (FunctionDecl funcDecl) = do
-    funcDeclStr <- pretty funcDecl
-    pure $ funcDeclStr <> ";"
-  pretty (SiteDecl siteDecl) = do
-    siteDeclStr <- pretty siteDecl
-    pure $ siteDeclStr <> ";"
-  pretty (ImportDecl moduleName malias) = do
-    let aliasStr = case malias of
-          Just a -> " as " <> a
-          Nothing -> ""
-    pure $ "import " <> moduleName <> aliasStr <> ";"
-  pretty (ImportDeclExposing moduleName names) = do
-    let namesStr = unwords (intersperse ", " names)
-    pure $ "import " <> moduleName <> " exposing (" <> namesStr <> ");"
-
-instance Prettyprint Program where
-  pretty (Program decls) = do
-    declsStrs <- mapM pretty decls
-    pure $ unlines declsStrs
