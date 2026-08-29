@@ -8,15 +8,17 @@ module Ibis.Syntax.AST.Surface
   , Decl (..)
   , Program (..)
   , Pat (..)
+  , Tactic (..)
 
     -- * Declarations
   , Param (..)
   , StructDecl (..)
   , InductiveCtor (..)
   , InductiveDecl (..)
+  , FunctionBody (..)
+  , FunctionDecl (..)
   , CoverRule (..)
   , SiteDeclaration (..)
-  , SitePath (..)
   )
 where
 
@@ -72,16 +74,32 @@ data Term
 -- DECLARATION NODES
 ---------------------------------------------
 
+data Tactic
+  = TacticIntro String -- intro x
+  | TacticExact Term -- exact e
+  | TacticApply Term -- apply e
+  | TacticRfl -- rfl
+  | TacticSimp Term -- simp e
+  | TacticCases Term -- cases e
+  | TacticInduction Term -- induction e
+  | TacticBind String (Maybe Term) Term -- bind x : A = e
+  | TacticHave String (Maybe Term) Term -- have x : A = e
+  | TacticShow Term -- show e
+  | TacticSorry -- sorry
+  | TacticPathAcross Term Term -- path_across u v
+  | TacticCovers Term Term -- covers u v
+  | TacticRes Term Term -- res u v
+  | TacticLan Term Term -- lan u v
+  | TacticGlue Term Term Term Term -- glue u v secU secV
+  deriving (Show, Eq)
+
 data Param = Param
   { paramName :: String
   , paramType :: Term
   }
   deriving (Show, Eq)
 
--- A path in a topological site
-data SitePath = SitePath String String String
-  deriving (Show, Eq)
-
+-- Struct type
 data StructDecl = StructDecl
   { structName :: String
   , structParams :: [Param]
@@ -95,6 +113,7 @@ data InductiveCtor = InductiveCtor
   }
   deriving (Show, Eq)
 
+-- Inductive type
 data InductiveDecl = InductiveDecl
   { indName :: String
   , indParams :: [Param]
@@ -102,6 +121,21 @@ data InductiveDecl = InductiveDecl
   , indConstructors :: [InductiveCtor]
   }
   deriving (Show, Eq)
+
+data FunctionBody
+  = SimpleBody Term -- A simple term body
+  | TacticBody [Tactic] -- A tactic-based proof body
+  deriving (Show, Eq)
+
+data FunctionDecl = FunctionDecl
+  { funcName :: String
+  , funcParams :: [Param]
+  , funcReturnType :: Term
+  , funcBody :: FunctionBody
+  }
+  deriving (Show, Eq)
+
+-- Site declaration and covering rules
 
 data CoverRule = CoverRule
   { parentSite :: String
@@ -112,7 +146,6 @@ data CoverRule = CoverRule
 data SiteDeclaration = SiteDeclaration
   { siteName :: String
   , siteCovers :: [CoverRule]
-  , sitePaths :: [SitePath]
   }
   deriving (Show, Eq)
 
@@ -120,6 +153,7 @@ data Decl
   = TermDecl Term
   | StructDecl' StructDecl
   | InductiveDecl' InductiveDecl
+  | FunctionDecl' FunctionDecl
   | SiteDecl SiteDeclaration
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)

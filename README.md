@@ -7,13 +7,17 @@ Ibis is an experimental programming language designed to explore the application
 Required tactics to add to the elaborator for theorem proving:
 
 Core: 
-- intro/revert          : bind and unbind variables in goal context
-- exact/assumption      : use a term that exactly matches the goal or an assumption
-- rfl/simp              : use reflexivity or simplification to solve equalities
-- apply/elim            : apply a lemma or eliminate a hypothesis
-- cases/induction       : perform case analysis or induction on a term
-- rw/subst              : rewrite using an equality
-- sorry                 : admit a goal (placeholder for future proof)
+- intro                 : introduce a new variable into the context
+- exact e               : provide an exact term to solve the goal
+- apply e               : apply a term to the goal, generating new subgoals
+- rfl                   : prove equality by reflexivity
+- simp e                : simplify the goal using the given term
+- cases e               : perform case analysis on the given term
+- induction e           : perform induction on the given term
+- let x : A = e in t    : introduce a let binding into the context
+- have h : A := e in t  : introduce a hypothesis into the context
+- show e                : show the type of the given term
+- sorry                 : admit the current goal
 
 Presheaves & Sheaves:
 - path_across           : dependent path equality proof

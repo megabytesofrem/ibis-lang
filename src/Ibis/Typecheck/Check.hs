@@ -19,8 +19,8 @@ data TypecheckCtx = TypecheckCtx
   -- ^ Typing context Γ
   }
 
--- | Typechecker monad used for type checking and inference
-newtype Typechecker a = TypecheckM {runTypecheckM :: ReaderT TypecheckCtx (Either String) a}
+-- | TypecheckM monad used for type checking and inference
+newtype TypecheckM a = TypecheckM {runTypechecker :: ReaderT TypecheckCtx (Either String) a}
   deriving
     ( Functor
     , Applicative
@@ -29,21 +29,21 @@ newtype Typechecker a = TypecheckM {runTypecheckM :: ReaderT TypecheckCtx (Eithe
     , MonadError String
     )
 
-lookupType :: DeBruijn -> Typechecker Value
+lookupType :: DeBruijn -> TypecheckM Value
 lookupType idx = do
   ctx <- asks typingCtx
   if idx < length ctx
     then pure (ctx !! idx)
     else throwError $ "Unbound type variable: " ++ show idx
 
-lookupValue :: DeBruijn -> Typechecker Value
+lookupValue :: DeBruijn -> TypecheckM Value
 lookupValue idx = do
   ctx <- asks env
   if idx < length ctx
     then pure (ctx !! idx)
     else throwError $ "Unbound variable: " ++ show idx
 
-withBinding :: Value -> Value -> Typechecker a -> Typechecker a
+withBinding :: Value -> Value -> TypecheckM a -> TypecheckM a
 withBinding v ty =
   local
     ( \ctx ->
@@ -56,12 +56,12 @@ withBinding v ty =
 ---------------------------------------------
 
 -- | Get the universe level of a type, throwing an error if it's not a universe
-universeLevel :: Value -> Typechecker Int
+universeLevel :: Value -> TypecheckM Int
 universeLevel (VUniverse n) = pure n
 universeLevel v = throwError $ "Type mismatch: Expected a universe type, but got: " ++ show v
 
 -- | Check a term against an expected type, throwing an error if they do not match
-check :: CoreTerm -> Value -> Typechecker ()
+check :: CoreTerm -> Value -> TypecheckM ()
 check term ty = case (term, ty) of
   -- Lambda abstraction: checked against a dependent function type (Pi)
   (Lam _lname body, VPi _vname dom cod) -> do
@@ -110,7 +110,7 @@ check term ty = case (term, ty) of
             ++ show normInferred
 
 -- | Infer the type of a term, throwing an error if it cannot be inferred
-infer :: CoreTerm -> Typechecker Value
+infer :: CoreTerm -> TypecheckM Value
 infer term = case term of
   -- Universes: Universe n has type Universe (n + 1)
   Universe n -> pure $ VUniverse (n + 1)

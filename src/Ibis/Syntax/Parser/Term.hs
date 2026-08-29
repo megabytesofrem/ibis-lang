@@ -2,12 +2,14 @@
 
 module Ibis.Syntax.Parser.Term where
 
+import Control.Monad (guard)
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer qualified as L
 
 import Ibis.Syntax.AST.Surface
 import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pIdent, pLiteral, parens, symbol)
 import Ibis.Syntax.Parser.Pattern (pPattern)
+import Ibis.Syntax.Parser.Tactic (pByBlock)
 
 -- Parse a typed pair: x : A
 typedPair :: Parser Param
@@ -17,15 +19,28 @@ typedPair = do
   typ <- pTerm
   pure $ Param name typ
 
+-- Parse a telescope of typed pairs: (x : A) (y : B) ...
 telescope :: Parser [Param]
 telescope = many typedPair
 
--- Universe level parsing (e.g Type 0, Type 1, etc.)
+-- Universe level parsing (e.g Type 1, etc.)
+--
+-- Universe 0 cannot be constructed via 'Type 0' to avoid Girard's paradox
 pUniverse :: Parser Term
 pUniverse = do
   _ <- symbol "Type"
   level <- lexeme L.decimal
+
+  guard (level >= 0) <?> "Universe level must be non-negative"
+  guard (level > 0) <?> "Universe cannot be zero; use 'Prop'"
+
   pure $ Universe level
+
+-- Parse the Prop universe (Prop is Universe 0)
+pPropUniverse :: Parser Term
+pPropUniverse = do
+  _ <- symbol "Prop"
+  pure $ Universe 0
 
 -- Topological site parsing (e.g @SiteName)
 pSite :: Parser Term
@@ -82,12 +97,31 @@ pAtom :: Parser Term
 pAtom =
   choice
     [ pUniverse
+    , pPropUniverse
     , pSite
     , pList
-    , parens pTermSeq
+    , parens pParenTerm
     , Var <$> pIdent
     , Lit <$> pLiteral
     ]
+
+pParenTerm :: Parser Term
+pParenTerm =
+  try pAnnotated <|> pTupleOrSingle
+ where
+  -- (x : T)
+  pAnnotated = do
+    name <- pIdent
+    _ <- symbol ":"
+    typ <- pTerm
+    pure $ Ann (Var name) typ
+
+  -- (a) or (a, b, c)
+  pTupleOrSingle = do
+    terms <- pTerm `sepBy` symbol ","
+    case terms of
+      [t] -> pure t
+      ts -> pure $ foldr1 Pair ts
 
 -- Application chain: f x y z
 pApp :: Parser Term
@@ -96,33 +130,34 @@ pApp = do
   args <- many pAtom
   pure $ foldl' App headTerm args
 
--- Handles parenthesized terms, pairs (a, b), and type annotations (x : T)
-pTermSeq :: Parser Term
-pTermSeq = do
-  t <- pTerm
-  mOp <- optional (symbol "," <|> symbol ":")
-  case mOp of
-    Just "," -> Pair t <$> pTerm
-    Just ":" -> Ann t <$> pTerm
-    _ -> pure t
-
--- Dependent function types (Π (x : A) . B)
+-- Dependent function types ((x : A) -> B)
 pPi :: Parser Term
 pPi = do
-  _ <- symbol "Π" <|> symbol "Pi"
-  param <- parens typedPair
-  _ <- symbol "."
+  _ <- optional (symbol "Π" <|> symbol "Pi")
+  param <- try $ parens typedPair
+  _ <- symbol "->"
   body <- pTerm
   pure $ Pi (paramName param) (paramType param) body
 
--- Dependent product types (Σ (x : A) . B)
+-- Dependent product types ((x : A, B))
 pSigma :: Parser Term
 pSigma = do
-  _ <- symbol "Σ" <|> symbol "Sigma"
-  param <- parens typedPair
-  _ <- symbol "."
-  body <- pTerm
-  pure $ Sigma (paramName param) (paramType param) body
+  _ <- optional (symbol "Σ" <|> symbol "Sigma")
+  first <- parens typedPair
+  _ <- symbol ","
+  second <- pTerm
+  pure $ Sigma (paramName first) (paramType first) second
+
+-- Function types: A -> B or (pApp) -> pTerm
+pFuncType :: Parser Term
+pFuncType = do
+  dom <- pApp
+
+  -- Check for an optional codomain after the arrow
+  mCod <- optional (symbol "->" *> pTerm)
+  case mCod of
+    Just cod -> pure $ Pi "_" dom cod
+    Nothing -> pure dom
 
 pFst :: Parser Term
 pFst = do
@@ -184,48 +219,35 @@ pTerm =
     , try pMatch
     , try pFst
     , try pSnd
-    , pApp -- pApp handles atoms and applications
+    , pFuncType
     ]
 
 -------------------------------------------------------------
 -- DECLARATION PARSERS
 --------------------------------------------------------------
 
--- Parse a covering rule: cover @Parent = {@Child1, @Child2, ...}
+-- Parse a covering rule: cover @Parent has {@Child1, @Child2, ...}
 pCoveringRule :: Parser CoverRule
 pCoveringRule = do
   _ <- symbol "cover"
   parent <- symbol "@" *> pIdent
-  _ <- symbol ":="
+  _ <- symbol "has"
   children <-
     between (symbol "{") (symbol "}") $
       (symbol "@" *> pIdent) `sepBy` symbol ","
   pure $ CoverRule parent children
 
--- Parse a path between two covers: path name : @src -> @dest
-pSitePath :: Parser SitePath
-pSitePath = do
-  _ <- symbol "path"
-  name <- pIdent
-  _ <- symbol ":="
-  src <- symbol "@" *> pIdent
-  _ <- symbol "->"
-  dest <- symbol "@" *> pIdent
-  pure $ SitePath name src dest
-
 -- Parse a site declaration:
 -- site SiteName where
---   cover @J := {@Child1, @Child2, ...}
---   cover @K := {@Child3, @Child4, ...}
---   path name := @src -> @dest
+--   cover @J has {@Child1, @Child2, ...}
+--   cover @K has {@Child3, @Child4, ...}
 pSiteDeclaration :: Parser SiteDeclaration
 pSiteDeclaration = do
   _ <- symbol "site"
   name <- pIdent
   _ <- symbol "where"
   covers <- many pCoveringRule
-  paths <- many pSitePath
-  pure $ SiteDeclaration name covers paths
+  pure $ SiteDeclaration name covers
 
 -- Parse a struct declaration:
 -- struct Buffer (site : Site) where
@@ -272,6 +294,35 @@ pInductiveDeclaration = do
   ctors <- many pInductiveConstructor
   pure $ InductiveDecl name params arity ctors
 
+pFunctionBody :: Parser FunctionBody
+pFunctionBody =
+  choice
+    [ SimpleBody <$> pTerm -- def f (x : A) (y : B) : C := e
+    , TacticBody <$> pByBlock -- def f (x : A) (y : B) : C := by ...
+    ]
+
+-- Parse a function declaration:
+-- def f (x : A) (y : B) : C := e
+-- OR
+-- def f (x : A) (y : B) : C := by
+--   intro z
+--   exact (g z)
+pFunctionDeclaration :: Parser FunctionDecl
+pFunctionDeclaration = do
+  _ <- symbol "def"
+  name <- pIdent
+  params <- telescope
+  _ <- symbol ":"
+  returnType <- pTerm
+  _ <- symbol ":="
+  body <- pFunctionBody
+  pure $
+    FunctionDecl
+      name
+      params
+      returnType
+      body
+
 -- Top-level declaration parser
 pDecl :: Parser Decl
 pDecl =
@@ -279,5 +330,6 @@ pDecl =
     [ TermDecl <$> pTerm
     , StructDecl' <$> pStructDeclaration
     , InductiveDecl' <$> pInductiveDeclaration
+    , FunctionDecl' <$> pFunctionDeclaration
     , SiteDecl <$> pSiteDeclaration
     ]

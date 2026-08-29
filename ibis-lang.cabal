@@ -47,7 +47,7 @@ library
   import: warnings
   -- Modules exported by the library.
   exposed-modules:
-    Ibis.Kernel
+    Ibis.Category.Kernel
     Ibis.Prettyprint
     Ibis.Syntax.AST
     Ibis.Syntax.AST.Core
@@ -56,10 +56,11 @@ library
     Ibis.Syntax.Parser
     Ibis.Syntax.Parser.Lexer
     Ibis.Syntax.Parser.Pattern
+    Ibis.Syntax.Parser.Tactic
     Ibis.Syntax.Parser.Term
     Ibis.Typecheck.Check
-    Ibis.Typecheck.Elaborate
     Ibis.Typecheck.Eval
+    Ibis.Typecheck.Lower
 
   ----
   -- Modules included in this library but not exported.
@@ -74,6 +75,7 @@ library
     base ^>=4.20.2.0,
     categories ^>=1.0.7,
     containers ^>=0.8,
+    ibis-lang ^>=0.1.0.0,
     megaparsec ^>=9.8.1,
     mtl ^>=2.3.0,
     parser-combinators ^>=1.3.1,
