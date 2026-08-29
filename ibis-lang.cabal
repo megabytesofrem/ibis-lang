@@ -60,9 +60,8 @@ library
     Ibis.Syntax.Parser
     Ibis.Syntax.Parser.Lexer
     Ibis.Syntax.Parser.Pattern
-    Ibis.Typecheck.Environment
+    Ibis.Typecheck.Check
     Ibis.Typecheck.Eval
-    Ibis.Typecheck.Typecheck
 
   ----
   -- Modules included in this library but not exported.

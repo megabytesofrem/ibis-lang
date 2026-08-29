@@ -6,7 +6,16 @@ type Env = [Value]
 
 -- | Check if two terms are alpha-equivalent
 alphaEq :: CoreTerm -> CoreTerm -> Bool
-alphaEq t1 t2 = error "Alpha-equivalence checking is not implemented yet"
+alphaEq t1 t2 =
+  let v1 = eval [] t1
+      v2 = eval [] t2
+      norm1 = readBack 0 v1
+      norm2 = readBack 0 v2
+   in norm1 == norm2
+
+equal :: DeBruijn -> Value -> Value -> Bool
+equal depth v1 v2 =
+  readBack depth v1 == readBack depth v2
 
 -- | Safe lookup in the environment, handles out-of-bounds indices gracefully
 lookupEnv :: Int -> Env -> Maybe Value
@@ -29,7 +38,8 @@ eval env term = case term of
   Pi name dom cod ->
     VPi name (eval env dom) (\x -> eval (x : env) cod)
   Lam name body ->
-    VLam name (\x -> eval (x : env) body)
+    let dummyDom = VUnit
+     in VLam name dummyDom (\x -> eval (x : env) body)
   App f x ->
     evalApp (eval env f) (eval env x)
   -- Dependent Products
@@ -56,7 +66,7 @@ evalSnd (VNeutral (VSigma _ _aT dT) neu) =
 evalSnd _ = error "Cannot take snd of non-pair value"
 
 evalApp :: Value -> Value -> Value
-evalApp (VLam _ f) x = f x
+evalApp (VLam _ dom f) x = f x
 evalApp (VNeutral (VPi _ _ cod) neu) x = VNeutral (cod x) (NApp neu x)
 evalApp _ _ = error "Cannot apply non-function value"
 
@@ -69,8 +79,8 @@ readBack depth val = case val of
     let fresh = VNeutral dom (NVar depth)
         cod' = cod fresh
      in Pi name (readBack depth dom) (readBack (depth + 1) cod')
-  VLam name body ->
-    let fresh = VNeutral (VUniverse 0) (NVar depth)
+  VLam name dom body ->
+    let fresh = VNeutral dom (NVar depth)
         body' = body fresh
      in Lam name (readBack (depth + 1) body')
   VSigma name dom cod ->
