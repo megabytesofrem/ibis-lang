@@ -10,7 +10,7 @@ import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, asks, local)
 
 import Ibis.Syntax.AST.Core
-import Ibis.Typecheck.Eval (equal, eval, evalFst, readBack)
+import Ibis.Typecheck.Eval (convert, eval, evalFst, isDefEq, readBack)
 
 data TypecheckCtx = TypecheckCtx
   { env :: [Value]
@@ -19,7 +19,7 @@ data TypecheckCtx = TypecheckCtx
   -- ^ Typing context Γ
   }
 
--- | TypecheckM monad used for type checking and inference
+-- | Typecheck monad used for type checking and inference
 newtype TypecheckM a = TypecheckM {runTypechecker :: ReaderT TypecheckCtx (Either String) a}
   deriving
     ( Functor
@@ -56,6 +56,7 @@ withBinding v ty =
 ---------------------------------------------
 
 -- | Get the universe level of a type, throwing an error if it's not a universe
+-- NOTE: Universe 0 is the universe of propositions, Universe 1 is the universe of types, and so on.
 universeLevel :: Value -> TypecheckM Int
 universeLevel (VUniverse n) = pure n
 universeLevel v = throwError $ "Type mismatch: Expected a universe type, but got: " ++ show v
@@ -98,7 +99,7 @@ check term ty = case (term, ty) of
     inferredTy <- infer expectedTerm
     depth <- asks (length . typingCtx)
 
-    if equal depth inferredTy expectedTy
+    if convert depth inferredTy expectedTy
       then pure ()
       else do
         let normExpected = readBack depth expectedTy

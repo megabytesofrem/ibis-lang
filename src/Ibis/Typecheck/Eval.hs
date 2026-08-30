@@ -10,17 +10,21 @@ import Ibis.Syntax.AST.Core
 
 type Env = [Value]
 
--- | Check if two terms are alpha-equivalent
-alphaEq :: CoreTerm -> CoreTerm -> Bool
-alphaEq t1 t2 =
-  let v1 = eval [] t1
-      v2 = eval [] t2
-      norm1 = readBack 0 v1
-      norm2 = readBack 0 v2
-   in norm1 == norm2
+-- Definitional equality check for two values in a given environment
+isDefEq :: Env -> CoreTerm -> CoreTerm -> Bool
+isDefEq env t1 t2 =
+  let v1 = eval env t1
+      v2 = eval env t2
+   in convert (length env) v1 v2
 
-equal :: DeBruijn -> Value -> Value -> Bool
-equal depth v1 v2 =
+-- Equality check for two values in a given environment
+equal :: Env -> Value -> Value -> Bool
+equal env v1 v2 = convert (length env) v1 v2
+
+-- Convert two values to their normal forms and check for equality using
+-- their read-back representations
+convert :: DeBruijn -> Value -> Value -> Bool
+convert depth v1 v2 =
   readBack depth v1 == readBack depth v2
 
 -- | Safe lookup in the environment, handles out-of-bounds indices gracefully
@@ -32,6 +36,7 @@ lookupEnv idx env
 extendEnv :: Value -> Env -> Env
 extendEnv v env = v : env
 
+-- Evaluate a CoreTerm in a given environment to produce a Value
 eval :: Env -> CoreTerm -> Value
 eval env term = case term of
   Universe n -> VUniverse n
@@ -174,6 +179,7 @@ evalExt _ _ _ _ concreteSection = concreteSection
 -- READ BACK
 ---------------------------------------------
 
+--  Convert the Value back into a CoreTerm
 readBack :: DeBruijn -> Value -> CoreTerm
 readBack depth val = case val of
   VUniverse n -> Universe n
@@ -198,6 +204,7 @@ readBack depth val = case val of
   VNeutral ty neu -> readBackNeutral depth ty neu
   _ -> error "Read back for this value is not implemented yet"
 
+-- Convert a neutral term back into a CoreTerm, given its type and the current De Bruijn depth
 readBackNeutral :: DeBruijn -> Value -> Neutral -> CoreTerm
 readBackNeutral depth ty neu = case neu of
   NVar idx -> Var (depth - idx - 1)
