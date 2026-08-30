@@ -59,8 +59,9 @@ library
     Ibis.Syntax.Parser.Tactic
     Ibis.Syntax.Parser.Term
     Ibis.Typecheck.Check
+    Ibis.Typecheck.Elaborate
     Ibis.Typecheck.Eval
-    Ibis.Typecheck.Lower
+    Ibis.Typecheck.Prover
 
   ----
   -- Modules included in this library but not exported.
