@@ -131,6 +131,18 @@ a morphism from $K(b)$ to $d$ in $\mathcal{D}$, and then glue them together usin
     \]
 \end{definition}
 
+\subsection{Glueing axiom}
+For any open cover $\{U_i\}_{i \in I}$ of an open set $U$, a family of local sections $s_i \in F(U_i)$ is compatible if their restriction maps commute across every pairwise intersection $U_i \cap U_j$ (the union of all pairwise intersections is the entire cover):
+
+\[ \rho_{U_i, U_i \cap U_j}(s_i) = \rho_{U_j, U_i \cap U_j}(s_j) \]
+
+If this condition holds, there exists a unique global section $s \in F(U)$ such that $s$ restricts to
+$s_i$ on each $U_i$:
+
+\[ \rho_{U, U_i}(s) = s_i \quad \forall i \in I \]
+
+In other words:
+Local data $s_u \in F(U)$ and $s_v \in F(V)$ admit a unique amalgamation $s_{u \cup v} \in F(U \cup V)$ \emph{if and only if} their restriction pullback maps yield identical images in the intersection domain $F(U \cap V)$.
 
 \subsection{Geometric Morphisms}
 A geometric morphism $f: \mathcal{E} \to \mathcal{F}$ between topoi $\mathcal{E}$ and $\mathcal{F}$ consists of a pair of adjoint functors $(f^*, f_*)$ where $f^* \dashv f_*$:

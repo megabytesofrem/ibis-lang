@@ -6,4 +6,5 @@
 \contentsline {subsection}{\numberline {2.2}Opposite Categories and Presheaves}{3}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}Restriction Maps}{3}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}Kan Extensions}{3}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Geometric Morphisms}{4}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.5}Glueing axiom}{4}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Geometric Morphisms}{5}{subsection.2.6}%

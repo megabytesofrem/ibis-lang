@@ -1,6 +1,7 @@
 module Ibis.Syntax.Parser
   ( module Lexer
   , module Pattern
+  , module Term
   -- , module Decl
   )
 where
@@ -8,3 +9,4 @@ where
 -- import Ibis.Syntax.Parser.Decl as Decl
 import Ibis.Syntax.Parser.Lexer as Lexer
 import Ibis.Syntax.Parser.Pattern as Pattern
+import Ibis.Syntax.Parser.Term as Term

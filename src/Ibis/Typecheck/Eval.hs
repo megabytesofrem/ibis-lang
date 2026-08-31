@@ -1,6 +1,6 @@
 {- |
   Module      : Ibis.Typecheck.Eval
-  Description : Evaluation of dependent terms in the core language and read-backs
+  Description : Normalization by Evaluation (NbE) for the Ibis language
 -}
 module Ibis.Typecheck.Eval where
 
@@ -40,6 +40,7 @@ extendEnv v env = v : env
 eval :: Env -> CoreTerm -> Value
 eval env term = case term of
   Universe n -> VUniverse n
+  Const name -> VConst name
   Var n -> case lookupEnv n env of
     Just v -> v
     Nothing -> error $ "Unbound variable at index: " ++ show n

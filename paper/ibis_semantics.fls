@@ -187,6 +187,7 @@ INPUT ./ibis_semantics.out
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx12.pfb
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi10.pfb
+INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi6.pfb
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi8.pfb
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi9.pfb
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr10.pfb

@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1787834674.88053 "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" "ibis_semantics.pdf" "ibis_semantics" 1787834675.25414 0
-  "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" 1787834674.66694 9108 03ce64aa40bcf450a18c5660bc088589 ""
+["pdflatex"] 1788084214.54739 "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" "ibis_semantics.pdf" "ibis_semantics" 1788084214.90916 0
+  "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" 1788084214.33104 9884 05ed69e35b1804329463ac0be70bf513 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/map/fontname/texfonts.map" 1 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/jknappen/ec/tcrm1095.tfm" 1 1536 02c06700a42be0f5a28664c7273f82e7 ""
@@ -41,6 +41,7 @@
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx10.pfb" 1 34811 78b52f49e893bcba91bd7581cdc144c0 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx12.pfb" 1 32080 340ef9bf63678554ee606688e7b5339d ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi10.pfb" 1 36299 5f9df58c2139e7edcf37c8fca4bd384d ""
+  "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi6.pfb" 1 37166 8ab3487cbe3ab49ebce74c29ea2418db ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi8.pfb" 1 35469 70d41d2b9ea31d5d813066df7c99281c ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi9.pfb" 1 36094 798f80770b3b148ceedd006d487db67c ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1 35752 024fb6c41858982481f6968b5fc26508 ""
@@ -107,10 +108,10 @@
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1 5541495 31aeefcfb4102ba6a134776e4219ddb9 ""
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/web2c/pdftex/pdflatex.fmt" 1 3637265 4ddf642bf8745afd24dea53622cb495b ""
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/web2c/texmf.cnf" 1 44359 ab57453ee8c44e7580e39ac6b6f67c95 ""
-  "ibis_semantics.aux" 1787834675.20694 1399 f3f1c7d9b6b05381b76791a02c8cc2df "pdflatex"
-  "ibis_semantics.out" 1787834675.20694 1285 bc455ed7ba51721e1a57376a2f05ddd0 "pdflatex"
-  "ibis_semantics.tex" 1787834674.66694 9108 03ce64aa40bcf450a18c5660bc088589 ""
-  "ibis_semantics.toc" 1787834675.20821 728 c9e1657061d3052416fc56bb00101190 "pdflatex"
+  "ibis_semantics.aux" 1788084214.86294 1519 522751b5014f5818888dedc0b2f142dd "pdflatex"
+  "ibis_semantics.out" 1788084214.86294 1411 d667d57a90261bce60cfd46142134358 "pdflatex"
+  "ibis_semantics.tex" 1788084214.33104 9884 05ed69e35b1804329463ac0be70bf513 ""
+  "ibis_semantics.toc" 1788084214.86485 807 8b3c42609be99122e6b6ed9e60045fd9 "pdflatex"
   (generated)
   "ibis_semantics.aux"
   "ibis_semantics.log"

@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Ibis.Typecheck.Prover where
+module Ibis.Tactics.Prover where
 
 import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.State (MonadState, StateT, get, modify, put, runStateT)
@@ -93,7 +93,7 @@ subst x sub target = case target of
     | v == x -> sub
     | otherwise -> Var v
   App f a -> App (subst x sub f) (subst x sub a)
-  Lam v ty body
-    | v == x -> Lam v (subst x sub ty) body -- shadowed: do not substitute in body
-    | otherwise -> Lam v (subst x sub ty) (subst x sub body)
+  Lam v body
+    | v == x -> Lam v body -- shadowed: do not substitute in body
+    | otherwise -> Lam v (subst x sub body)
   other -> other
