@@ -8,11 +8,11 @@
 module Ibis.Syntax.Elaborate where
 
 import Control.Monad.Except (MonadError, throwError)
-import Control.Monad.Reader (MonadReader, ReaderT, ask, local, runReaderT)
 import Data.List (elemIndex)
 import Data.Map.Strict qualified as M
 
-import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), Unop (..))
+import Control.Monad.State (MonadState, StateT, get, put, runStateT)
+import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
@@ -20,34 +20,68 @@ import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
 data ElabCtx = ElabCtx
   { nameMap :: M.Map String Int -- Mapping from variable names to De Bruijn indices
   , currentDepth :: Int -- Current depth in the context for De Bruijn indices
+  , universeMap :: M.Map String Int -- Mapping from universe names to their levels
+  , nextLevel :: Int -- Next available universe level for fresh universes
   }
   deriving (Show, Eq)
 
 emptyElabCtx :: ElabCtx
-emptyElabCtx = ElabCtx M.empty 0
+emptyElabCtx =
+  ElabCtx
+    { nameMap = M.empty
+    , currentDepth = 0
+    , universeMap = M.empty
+    , nextLevel = 1 -- Universes start from 1, as 0 is reserved for Prop
+    }
 
 -- | Elaboration monad used for elaborating surface syntax into core syntax
-newtype ElabM a = ElabM {runElabM :: ReaderT ElabCtx (Either String) a}
+newtype ElabM a = ElabM {runElabM :: StateT ElabCtx (Either String) a}
   deriving
     ( Functor
     , Applicative
     , Monad
-    , MonadReader ElabCtx
+    , MonadState ElabCtx
     , MonadError String
     )
 
 lookupName :: String -> ElabM Int
 lookupName name = do
-  ctx <- ask
+  ctx <- get
   case M.lookup name (nameMap ctx) of
     Just depth -> pure (currentDepth ctx - depth - 1) -- Convert to De Bruijn index
     Nothing -> throwError $ "Unbound variable: " ++ name
 
+localState :: (MonadState s m) => (s -> s) -> m a -> m a
+localState f action = do
+  orig <- get
+  put (f orig)
+  result <- action
+  put orig
+  pure result
+
 extendCtx :: String -> ElabM a -> ElabM a
-extendCtx name action = local updateCtx action
+extendCtx name action = localState updateCtx action
  where
-  updateCtx (ElabCtx nmap depth) =
-    ElabCtx (M.insert name depth nmap) (depth + 1)
+  updateCtx (ElabCtx nmap depth uMap next) =
+    ElabCtx
+      (M.insert name depth nmap)
+      (depth + 1)
+      uMap
+      next
+
+getOrAssignUniverse :: String -> ElabM Int
+getOrAssignUniverse name = do
+  ctx <- get
+  case M.lookup name (universeMap ctx) of
+    Just level -> pure level
+    Nothing -> do
+      let newLevel = nextLevel ctx
+      put $
+        ctx
+          { universeMap = M.insert name newLevel (universeMap ctx)
+          , nextLevel = newLevel + 1
+          }
+      pure newLevel
 
 -- Extract variable bindings from patterns
 extractPatternVars :: Pat -> [String]
@@ -87,9 +121,15 @@ desugarMonadicDo (Bind name expr : rest) = do
       (Core.Lam (Just name) elabRest)
 desugarMonadicDo (_ : _) = throwError "Invalid do block"
 
+elabUniverse :: SurfaceUniverse -> ElabM CoreTerm
+elabUniverse (UnivName name) = do
+  level <- getOrAssignUniverse name
+  pure $ Core.Universe level
+elabUniverse (UnivLevel level) = pure $ Core.Universe level
+
 -- | Elaborate a surface term into a core term
 elabTerm :: Term -> ElabM CoreTerm
-elabTerm (Universe n) = pure $ Core.Universe n
+elabTerm (Universe univ) = elabUniverse univ
 elabTerm (Var name) = do
   idx <- lookupName name
   pure $ Core.Var idx
@@ -259,5 +299,5 @@ unopToString = show
 binopToString :: Binop -> String
 binopToString = show
 
-runElaboration :: ElabM a -> ElabCtx -> Either String a
-runElaboration elab ctx = runReaderT (runElabM elab) ctx
+runElaboration :: ElabM a -> ElabCtx -> Either String (a, ElabCtx)
+runElaboration elab ctx = runStateT (runElabM elab) ctx

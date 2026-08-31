@@ -4,6 +4,7 @@
 -}
 module Ibis.Syntax.AST.Surface
   ( Literal (..)
+  , SurfaceUniverse (..)
   , Term (..)
   , Decl (..)
   , Program (..)
@@ -33,10 +34,16 @@ data Literal
   | LitString String
   deriving (Show, Eq)
 
+data SurfaceUniverse
+  = UnivName String -- A named universe (e.g., Type, Prop)
+  | UnivLevel Int -- A universe level (e.g., Type 0, Type 1)
+  deriving (Show, Eq)
+
 data Term
   = -- Universe levels (types are terms, universes classify types)
-    Universe Int
-  | Const String -- Constants (e.g., built-in functions, axioms)
+    Universe SurfaceUniverse
+  | -- Constants and variables
+    Const String -- Constants (e.g., built-in functions, axioms)
   | Var String
   | Lit Literal
   | Unit

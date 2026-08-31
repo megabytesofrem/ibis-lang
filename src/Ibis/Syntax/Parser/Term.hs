@@ -31,21 +31,31 @@ telescope = many typedPair
 -- Universe level parsing (e.g Type 1, etc.)
 --
 -- Universe 0 cannot be constructed via 'Type 0' to avoid Girard's paradox
-pUniverse :: Parser Term
-pUniverse = do
-  _ <- symbol "Type"
+pNumericUniverse :: Parser SurfaceUniverse
+pNumericUniverse = do
   level <- lexeme L.decimal
 
   guard (level >= 0) <?> "Universe level must be non-negative"
   guard (level > 0) <?> "Universe cannot be zero; use 'Prop'"
 
-  pure $ Universe level
+  pure $ UnivLevel level
+
+pNamedUniverse :: Parser SurfaceUniverse
+pNamedUniverse = do
+  name <- pIdent
+  pure $ UnivName name
+
+pUniverse :: Parser Term
+pUniverse = do
+  _ <- symbol "Type"
+  univ <- pNumericUniverse <|> pNamedUniverse
+  pure $ Universe univ
 
 -- Parse the Prop universe (Prop is Universe 0)
 pPropUniverse :: Parser Term
 pPropUniverse = do
   _ <- symbol "Prop"
-  pure $ Universe 0
+  pure $ Universe (UnivLevel 0)
 
 -- Topological site parsing (e.g @SiteName)
 pSite :: Parser Term
