@@ -12,7 +12,7 @@ import Data.List (elemIndex)
 import Data.Map.Strict qualified as M
 
 import Control.Monad.State (MonadState, StateT, get, put, runStateT)
-import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
+import Ibis.Syntax.AST (Binop (..), Literal (LitBool), MetaVar (MetaVar), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
@@ -69,6 +69,7 @@ extendCtx name action = localState updateCtx action
       uMap
       next
 
+-- | Get the universe level for a given universe name, assigning a new level if it doesn't exist
 getOrAssignUniverse :: String -> ElabM Int
 getOrAssignUniverse name = do
   ctx <- get
@@ -129,88 +130,120 @@ elabUniverse (UnivLevel level) = pure $ Core.Universe level
 
 -- | Elaborate a surface term into a core term
 elabTerm :: Term -> ElabM CoreTerm
-elabTerm (Universe univ) = elabUniverse univ
-elabTerm (Var name) = do
-  idx <- lookupName name
-  pure $ Core.Var idx
-elabTerm (Lit lit) = pure $ Core.Lit lit
-elabTerm (Pi name ty body) = do
-  elabTy <- elabTerm ty
-  extendCtx name $ do
-    elabBody <- elabTerm body
-    pure $ Core.Pi (Just name) elabTy elabBody
-elabTerm (Lam name body) = do
-  extendCtx name $ do
-    elabBody <- elabTerm body
-    pure $ Core.Lam (Just name) elabBody
-elabTerm (App f x) = do
-  elabF <- elabTerm f
-  elabX <- elabTerm x
-  pure $ Core.App elabF elabX
-elabTerm (Sigma name ty body) = do
-  elabTy <- elabTerm ty
-  extendCtx name $ do
-    elabBody <- elabTerm body
-    pure $ Core.Sigma (Just name) elabTy elabBody
-elabTerm (Pair a b) = do
-  elabA <- elabTerm a
-  elabB <- elabTerm b
-  pure $ Core.Pair elabA elabB
-elabTerm (Fst p) = do
-  elabP <- elabTerm p
-  pure $ Core.Fst elabP
-elabTerm (Snd p) = do
-  elabP <- elabTerm p
-  pure $ Core.Snd elabP
-elabTerm (Let name mTy e body) = do
-  elabE <- elabTerm e
-  case mTy of
-    Just ty -> do
-      _elabTy <- elabTerm ty
-      extendCtx name $ do
-        elabBody <- elabTerm body
-        pure $ Core.Let 0 elabE elabBody -- Note: De Bruijn index for the bound variable is 0
-    Nothing -> do
-      extendCtx name $ do
-        elabBody <- elabTerm body
-        pure $ Core.Let 0 elabE elabBody -- Note: De Bruijn index for the bound variable is 0
-elabTerm (Unop op e) = do
-  elabE <- elabTerm e
-  pure $ Core.App (Core.Const (unopToString op)) elabE
-elabTerm (Binop op e1 e2) = do
-  elabE1 <- elabTerm e1
-  elabE2 <- elabTerm e2
-  pure $ Core.App (Core.App (Core.Const (binopToString op)) elabE1) elabE2
-elabTerm (If cond thenBranch elseBranch) = do
-  elabCond <- elabTerm cond
-  elabThen <- elabTerm thenBranch
-  elabElse <- elabTerm elseBranch
-  pure $
-    Core.Match
-      elabCond
-      [ (PLit (LitBool True), elabThen)
-      , (PLit (LitBool False), elabElse)
-      ]
-elabTerm (For var collection body) = desugarFor var collection body
-elabTerm (Match scrutinee branches) = do
-  elabScrutinee <- elabTerm scrutinee
-  elabBranches <- mapM elabBranch branches
-  pure $ Core.Match elabScrutinee elabBranches
- where
-  elabBranch (pat, body) = do
-    -- Extend context based on pattern variables
-    let patVars = extractPatternVars pat
-    extendCtxs patVars $ do
+elabTerm tm = case tm of
+  Universe univ -> elabUniverse univ
+  Const name -> pure $ Core.Const name
+  MVar name -> pure $ Core.MVar name
+  Var name -> do
+    idx <- lookupName name
+    pure $ Core.Var idx
+  Lit lit -> pure $ Core.Lit lit
+  Unit -> pure Core.Unit
+  Pi name ty body -> do
+    elabTy <- elabTerm ty
+    extendCtx name $ do
       elabBody <- elabTerm body
-      pure (pat, elabBody)
+      pure $ Core.Pi (Just name) elabTy elabBody
+  Lam name body -> do
+    extendCtx name $ do
+      elabBody <- elabTerm body
+      pure $ Core.Lam (Just name) elabBody
+  App f x -> do
+    elabF <- elabTerm f
+    elabX <- elabTerm x
+    pure $ Core.App elabF elabX
+  Sigma name ty body -> do
+    elabTy <- elabTerm ty
+    extendCtx name $ do
+      elabBody <- elabTerm body
+      pure $ Core.Sigma (Just name) elabTy elabBody
+  Pair a b -> do
+    elabA <- elabTerm a
+    elabB <- elabTerm b
+    pure $ Core.Pair elabA elabB
+  Fst p -> do
+    elabP <- elabTerm p
+    pure $ Core.Fst elabP
+  Snd p -> do
+    elabP <- elabTerm p
+    pure $ Core.Snd elabP
+  Let name mTy e body -> do
+    elabE <- elabTerm e
+    case mTy of
+      Just ty -> do
+        _elabTy <- elabTerm ty
+        extendCtx name $ do
+          elabBody <- elabTerm body
+          pure $ Core.Let 0 elabE elabBody -- Note: De Bruijn index for the bound variable is 0
+      Nothing -> do
+        extendCtx name $ do
+          elabBody <- elabTerm body
+          pure $ Core.Let 0 elabE elabBody -- Note: De Bruijn index for the bound variable is 0
+  Ann e ty -> do
+    elabE <- elabTerm e
+    elabTy <- elabTerm ty
+    pure $ Core.Ann elabE elabTy
+  Unop op e -> do
+    elabE <- elabTerm e
+    pure $ Core.App (Core.Const (unopToString op)) elabE
+  Binop op e1 e2 -> do
+    elabE1 <- elabTerm e1
+    elabE2 <- elabTerm e2
+    pure $ Core.App (Core.App (Core.Const (binopToString op)) elabE1) elabE2
+  List elems -> do
+    elabElems <- mapM elabTerm elems
+    pure $
+      foldr
+        (\e acc -> Core.App (Core.App (Core.Const "cons") e) acc)
+        (Core.Const "nil")
+        elabElems
+  If cond thenBranch elseBranch -> do
+    elabCond <- elabTerm cond
+    elabThen <- elabTerm thenBranch
+    elabElse <- elabTerm elseBranch
+    pure $
+      Core.Match
+        elabCond
+        [ (PLit (LitBool True), elabThen)
+        , (PLit (LitBool False), elabElse)
+        ]
+  For var collection body -> desugarFor var collection body
+  Match scrutinee branches -> do
+    elabScrutinee <- elabTerm scrutinee
+    elabBranches <- mapM elabBranch branches
+    pure $ Core.Match elabScrutinee elabBranches
+   where
+    elabBranch (pat, body) = do
+      -- Extend context based on pattern variables
+      let patVars = extractPatternVars pat
+      extendCtxs patVars $ do
+        elabBody <- elabTerm body
+        pure (pat, elabBody)
 
-  extendCtxs [] action = action
-  extendCtxs (v : vs) action = extendCtx v (extendCtxs vs action)
-elabTerm (Do terms) = desugarMonadicDo terms
-elabTerm (Bind _name _expr) = throwError "Bind should only appear inside a do block"
----
---
-elabTerm tm = throwError $ "Elaboration not implemented for term: " ++ show tm
+    extendCtxs [] action = action
+    extendCtxs (v : vs) action = extendCtx v (extendCtxs vs action)
+  --
+  -- Monadic constructs
+  Do terms -> desugarMonadicDo terms
+  Bind _name _expr -> throwError "Bind should only appear inside a do block"
+  --
+  -- Topological Presheaf Primitives
+  Site name -> do
+    -- TODO: should this use lookupName or its own map?
+    idx <- lookupName name
+    pure $ Core.Site idx
+  Cover u v -> do
+    elabU <- elabTerm u
+    elabV <- elabTerm v
+    pure $ Core.Cover elabU elabV
+  Sect a u -> do
+    elabA <- elabTerm a
+    elabU <- elabTerm u
+    pure $ Core.Sect elabA elabU
+
+  -- TODO: Figure out how to synthesize a proof term for Ext/Res
+  Res u v -> throwError "Res elaboration not implemented yet"
+  Ext a u v -> throwError "Ext elaboration not implemented yet"
 
 elabDecl :: Decl -> ElabM [CoreDecl]
 elabDecl (TermDecl term) = do
@@ -299,5 +332,6 @@ unopToString = show
 binopToString :: Binop -> String
 binopToString = show
 
+-- | Run the elaboration monad with a given context
 runElaboration :: ElabM a -> ElabCtx -> Either String (a, ElabCtx)
 runElaboration elab ctx = runStateT (runElabM elab) ctx

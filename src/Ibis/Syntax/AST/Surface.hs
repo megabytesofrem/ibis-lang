@@ -44,6 +44,7 @@ data Term
     Universe SurfaceUniverse
   | -- Constants and variables
     Const String -- Constants (e.g., built-in functions, axioms)
+  | MVar String -- Meta-variable for unification
   | Var String
   | Lit Literal
   | Unit

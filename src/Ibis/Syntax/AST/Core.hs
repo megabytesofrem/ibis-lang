@@ -29,6 +29,7 @@ type Closure = (Value -> Value)
 data CoreTerm
   = Universe Int
   | Const String -- Constants (e.g., built-in functions, axioms)
+  | MVar String -- Meta-variable for unification
   | Var DeBruijn -- De Bruijn indexded variable
   | Lit Literal
   | Unit
@@ -43,13 +44,14 @@ data CoreTerm
   | Snd CoreTerm -- snd p
   -- Language constructs
   | Let DeBruijn CoreTerm CoreTerm -- let x = e in body
+  | Ann CoreTerm CoreTerm -- e : A
   | Match CoreTerm [(Pat, CoreTerm)]
   | -- Topological primitives
     Site DeBruijn -- A topological site
   | Cover CoreTerm CoreTerm -- Cover u v (u ⩿ v)
   | Sect CoreTerm CoreTerm -- Sect A u
-  | Res CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- ρ_{v,u} : Sect A v -> Sect A u
-  | Ext CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- e_{u,v} : Sect A u -> Sect A v
+  | Res CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- res u v a proof site
+  | Ext CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- ext u v a proof site
   deriving (Eq)
 
 data CoreDecl

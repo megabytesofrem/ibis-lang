@@ -45,6 +45,12 @@ pNamedUniverse = do
   name <- pIdent
   pure $ UnivName name
 
+pMetavar :: Parser Term
+pMetavar = do
+  _ <- symbol "?"
+  name <- pIdent
+  pure $ MVar name
+
 pUniverse :: Parser Term
 pUniverse = do
   _ <- symbol "Type"
@@ -113,6 +119,7 @@ pAtom =
   choice
     [ pUniverse
     , pPropUniverse
+    , pMetavar
     , pSite
     , pList
     , parens pParenTerm
@@ -154,7 +161,8 @@ pExpr = makeExprParser pExprTerm operatorTable
 pExprTerm :: Parser Term
 pExprTerm =
   choice
-    [ try pCover
+    [ try pLet
+    , try pCover
     , try pSect
     , try pRes
     , try pExt
@@ -162,7 +170,6 @@ pExprTerm =
     , try pSnd
     , try pPi
     , try pSigma
-    , try pLet
     , try pIf
     , try pMatch
     , try pDoNotation
