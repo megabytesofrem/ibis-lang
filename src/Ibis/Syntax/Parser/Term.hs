@@ -9,7 +9,7 @@ import Text.Megaparsec.Char.Lexer qualified as L
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Ibis.Syntax.AST.Operator (Binop (..), Unop (..))
 import Ibis.Syntax.AST.Surface
-import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pIdent, pLiteral, parens, symbol)
+import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pCtorName, pIdent, pLiteral, parens, symbol)
 import Ibis.Syntax.Parser.Pattern (pPattern)
 import Ibis.Syntax.Parser.Tactic (pByBlock)
 
@@ -18,7 +18,7 @@ typedPair :: Parser Param
 typedPair = do
   name <- pIdent
   _ <- symbol ":"
-  typ <- pTerm
+  typ <- pExpr
   pure $ Param name typ
 
 -- Parse a telescope of typed pairs: (x : A) (y : B) ...
@@ -54,16 +54,16 @@ pSite = do
 pCover :: Parser Term
 pCover = do
   _ <- symbol "Cover"
-  u <- pTerm
-  v <- pTerm
+  u <- pExpr
+  v <- pExpr
   pure $ Cover u v
 
 -- Parse a section term: Sect A u
 pSect :: Parser Term
 pSect = do
   _ <- symbol "Sect"
-  a <- pTerm
-  u <- pTerm
+  a <- pExpr
+  u <- pExpr
   pure $ Sect a u
 
 -- Parse a restriction term: res u to v
@@ -90,7 +90,7 @@ pExt = do
 pList :: Parser Term
 pList = do
   _ <- symbol "["
-  elems <- pTerm `sepBy` symbol ","
+  elems <- pExpr `sepBy` symbol ","
   _ <- symbol "]"
   pure $ List elems
 
@@ -103,6 +103,7 @@ pAtom =
     , pSite
     , pList
     , parens pParenTerm
+    , Const <$> pCtorName
     , Var <$> pIdent
     , Lit <$> pLiteral
     ]
@@ -115,12 +116,12 @@ pParenTerm =
   pAnnotated = do
     name <- pIdent
     _ <- symbol ":"
-    typ <- pTerm
+    typ <- pExpr
     pure $ Ann (Var name) typ
 
   -- (a) or (a, b, c)
   pTupleOrSingle = do
-    terms <- pTerm `sepBy` symbol ","
+    terms <- pExpr `sepBy` symbol ","
     case terms of
       [t] -> pure t
       ts -> pure $ foldr1 Pair ts
@@ -132,14 +133,27 @@ pApp = do
   args <- many pAtom
   pure $ foldl' App headTerm args
 
--- Arithmetic expression parser.
--- Precedence: unary -, then * /, then + -
+-- Expression parser with operator precedence from 'operatorTable'.
 pExpr :: Parser Term
 pExpr = makeExprParser pExprTerm operatorTable
 
--- Non-binding term forms that can appear as arithmetic operands.
+-- Top-level term parser hierarchy
 pExprTerm :: Parser Term
-pExprTerm = choice [try pFst, try pSnd, pApp]
+pExprTerm =
+  choice
+    [ try pCover
+    , try pSect
+    , try pRes
+    , try pExt
+    , try pFst
+    , try pSnd
+    , try pPi
+    , try pSigma
+    , try pLet
+    , try pIf
+    , try pMatch
+    , pFuncType
+    ]
 
 -- Dependent function types ((x : A) -> B)
 pPi :: Parser Term
@@ -147,7 +161,7 @@ pPi = do
   _ <- optional (symbol "Π" <|> symbol "Pi")
   param <- try $ parens typedPair
   _ <- symbol "->"
-  body <- pTerm
+  body <- pExpr
   pure $ Pi (paramName param) (paramType param) body
 
 -- Dependent product types ((x : A, B))
@@ -156,16 +170,16 @@ pSigma = do
   _ <- optional (symbol "Σ" <|> symbol "Sigma")
   first <- parens typedPair
   _ <- symbol ","
-  second <- pTerm
+  second <- pExpr
   pure $ Sigma (paramName first) (paramType first) second
 
--- Function types: A -> B or (pApp) -> pTerm
+-- Function types: A -> B or (pApp) -> pExpr
 pFuncType :: Parser Term
 pFuncType = do
-  dom <- pExpr
+  dom <- pApp
 
   -- Check for an optional codomain after the arrow
-  mCod <- optional (symbol "->" *> pTerm)
+  mCod <- optional (symbol "->" *> pExpr)
   case mCod of
     Just cod -> pure $ Pi "_" dom cod
     Nothing -> pure dom
@@ -186,21 +200,21 @@ pLet :: Parser Term
 pLet = do
   _ <- symbol "let"
   name <- pIdent
-  mTyp <- optional (symbol ":" *> pTerm)
+  mTyp <- optional (symbol ":" *> pExpr)
   _ <- symbol "="
-  value <- pTerm
+  value <- pExpr
   _ <- symbol "in"
-  body <- pTerm
+  body <- pExpr
   pure $ Let name mTyp value body
 
 pIf :: Parser Term
 pIf = do
   _ <- symbol "if"
-  cond <- pTerm
+  cond <- pExpr
   _ <- symbol "then"
-  thenBranch <- pTerm
+  thenBranch <- pExpr
   _ <- symbol "else"
-  elseBranch <- pTerm
+  elseBranch <- pExpr
   pure $ If cond thenBranch elseBranch
 
 pMatchArm :: Parser (Pat, Term)
@@ -208,28 +222,16 @@ pMatchArm = do
   _ <- symbol "|"
   pat <- pPattern
   _ <- symbol "->"
-  body <- pTerm
+  body <- pExpr
   pure (pat, body)
 
 pMatch :: Parser Term
 pMatch = do
   _ <- symbol "match"
-  expr <- pTerm
+  expr <- pExpr
   _ <- symbol "with"
   arms <- many pMatchArm
   pure $ Match expr arms
-
--- Top-level term parser hierarchy
-pTerm :: Parser Term
-pTerm =
-  choice
-    [ try pPi
-    , try pSigma
-    , try pLet
-    , try pIf
-    , try pMatch
-    , pFuncType
-    ]
 
 -------------------------------------------------------------
 -- DECLARATION PARSERS
@@ -275,7 +277,7 @@ pStructDeclaration = do
   field = do
     fieldName <- pIdent
     _ <- symbol ":"
-    fieldType <- pTerm
+    fieldType <- pExpr
     pure (fieldName, fieldType)
 
 -- Parse an inductive constructor:
@@ -285,7 +287,7 @@ pInductiveConstructor :: Parser InductiveCtor
 pInductiveConstructor = do
   name <- pIdent
   _ <- symbol ":"
-  typ <- pTerm
+  typ <- pExpr
   pure $ InductiveCtor name typ
 
 -- Parse an inductive declaration:
@@ -298,7 +300,7 @@ pInductiveDeclaration = do
   name <- pIdent
   params <- telescope -- Consumes fixed parameters like (A : Type 0)
   _ <- symbol ":"
-  arity <- pTerm -- Consumes index arity + universe like Nat -> Type 0
+  arity <- pExpr -- Consumes index arity + universe like Nat -> Type 0
   _ <- symbol "where"
   ctors <- many pInductiveConstructor
   pure $ InductiveDecl name params arity ctors
@@ -306,7 +308,7 @@ pInductiveDeclaration = do
 pFunctionBody :: Parser FunctionBody
 pFunctionBody =
   choice
-    [ SimpleBody <$> pTerm -- def f (x : A) (y : B) : C := e
+    [ SimpleBody <$> pExpr -- def f (x : A) (y : B) : C := e
     , TacticBody <$> pByBlock -- def f (x : A) (y : B) : C := by ...
     ]
 
@@ -322,7 +324,7 @@ pFunctionDeclaration = do
   name <- pIdent
   params <- telescope
   _ <- symbol ":"
-  returnType <- pTerm
+  returnType <- pExpr
   _ <- symbol ":="
   body <- pFunctionBody
   pure $
@@ -336,7 +338,7 @@ pFunctionDeclaration = do
 pDecl :: Parser Decl
 pDecl =
   choice
-    [ TermDecl <$> pTerm
+    [ TermDecl <$> pExpr
     , pStructDeclaration
     , pInductiveDeclaration
     , pFunctionDeclaration

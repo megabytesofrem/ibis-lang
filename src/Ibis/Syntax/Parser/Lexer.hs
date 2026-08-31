@@ -91,28 +91,13 @@ reservedWords =
   , "return"
   ]
 
--- List of reserved primitive types in the language
-primTypes :: [String]
-primTypes =
-  [ "Int"
-  , "UInt"
-  , "Float"
-  , "Bool"
-  , "String"
-  , "Char"
-  , "Unit"
-  ]
-
-isPrim :: String -> Bool
-isPrim name = name `elem` primTypes
-
 pIdentImpl :: Parser String
 pIdentImpl = lexeme . try $ do
   firstChar <- letterChar <|> char '_'
   rest <- many (alphaNumChar <|> char '_' <|> char '\'')
   let ident = firstChar : rest
-  if ident `elem` reservedWords || isPrim ident
-    then fail $ "Reserved word or primitive type: " ++ ident
+  if ident `elem` reservedWords
+    then fail $ "Identifier cannot be a reserved word: " ++ ident
     else pure ident
 
 pCtorNameImpl :: Parser String
@@ -120,9 +105,7 @@ pCtorNameImpl = do
   firstChar <- upperChar
   rest <- many (alphaNumChar <|> char '_' <|> char '\'')
   let ident = firstChar : rest
-  if ident `elem` reservedWords || isPrim ident
-    then fail $ "Reserved word or primitive type: " ++ ident
-    else pure ident
+  pure ident
 
 pIdent :: Parser String
 pIdent = try pIdentImpl
