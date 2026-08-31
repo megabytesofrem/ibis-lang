@@ -6,6 +6,8 @@ import Control.Monad (guard)
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer qualified as L
 
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import Ibis.Syntax.AST.Operator (Binop (..), Unop (..))
 import Ibis.Syntax.AST.Surface
 import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pIdent, pLiteral, parens, symbol)
 import Ibis.Syntax.Parser.Pattern (pPattern)
@@ -130,6 +132,15 @@ pApp = do
   args <- many pAtom
   pure $ foldl' App headTerm args
 
+-- Arithmetic expression parser.
+-- Precedence: unary -, then * /, then + -
+pExpr :: Parser Term
+pExpr = makeExprParser pExprTerm operatorTable
+
+-- Non-binding term forms that can appear as arithmetic operands.
+pExprTerm :: Parser Term
+pExprTerm = choice [try pFst, try pSnd, pApp]
+
 -- Dependent function types ((x : A) -> B)
 pPi :: Parser Term
 pPi = do
@@ -151,7 +162,7 @@ pSigma = do
 -- Function types: A -> B or (pApp) -> pTerm
 pFuncType :: Parser Term
 pFuncType = do
-  dom <- pApp
+  dom <- pExpr
 
   -- Check for an optional codomain after the arrow
   mCod <- optional (symbol "->" *> pTerm)
@@ -162,7 +173,7 @@ pFuncType = do
 pFst :: Parser Term
 pFst = do
   _ <- symbol "fst"
-  t <- pAtom -- Consumes an atom so `fst x y` parses as `(fst x) y`
+  t <- pAtom -- Consumes one atom so `fst x y` parses as `(fst x) y`
   pure $ Fst t
 
 pSnd :: Parser Term
@@ -217,8 +228,6 @@ pTerm =
     , try pLet
     , try pIf
     , try pMatch
-    , try pFst
-    , try pSnd
     , pFuncType
     ]
 
@@ -241,19 +250,19 @@ pCoveringRule = do
 -- site SiteName where
 --   cover @J has {@Child1, @Child2, ...}
 --   cover @K has {@Child3, @Child4, ...}
-pSiteDeclaration :: Parser SiteDeclaration
+pSiteDeclaration :: Parser Decl
 pSiteDeclaration = do
   _ <- symbol "site"
   name <- pIdent
   _ <- symbol "where"
   covers <- many pCoveringRule
-  pure $ SiteDeclaration name covers
+  pure $ SiteDecl name covers
 
 -- Parse a struct declaration:
 -- struct Buffer (site : Site) where
 --   capacity : Nat
 --   data : Array capacity
-pStructDeclaration :: Parser StructDecl
+pStructDeclaration :: Parser Decl
 pStructDeclaration = do
   _ <- symbol "struct"
   name <- pIdent
@@ -283,7 +292,7 @@ pInductiveConstructor = do
 -- inductive Vect (A : Type 0) : Nat -> Type 0 where
 --   Nil : Vect A 0
 --   Cons : (x : A) -> (xs : Vect A n) -> Vect A (n + 1)
-pInductiveDeclaration :: Parser InductiveDecl
+pInductiveDeclaration :: Parser Decl
 pInductiveDeclaration = do
   _ <- symbol "inductive"
   name <- pIdent
@@ -307,7 +316,7 @@ pFunctionBody =
 -- def f (x : A) (y : B) : C := by
 --   intro z
 --   exact (g z)
-pFunctionDeclaration :: Parser FunctionDecl
+pFunctionDeclaration :: Parser Decl
 pFunctionDeclaration = do
   _ <- symbol "def"
   name <- pIdent
@@ -328,8 +337,57 @@ pDecl :: Parser Decl
 pDecl =
   choice
     [ TermDecl <$> pTerm
-    , StructDecl' <$> pStructDeclaration
-    , InductiveDecl' <$> pInductiveDeclaration
-    , FunctionDecl' <$> pFunctionDeclaration
-    , SiteDecl <$> pSiteDeclaration
+    , pStructDeclaration
+    , pInductiveDeclaration
+    , pFunctionDeclaration
+    , pSiteDeclaration
     ]
+
+-- Operator precedence and associativity for parsing expressions
+operatorTable :: [[Operator Parser Term]]
+operatorTable =
+  [ [prefix "-" (Unop OpNegate)]
+  , -- Compose has the highest precedence, so that f . g x parses as (f . g) x
+    [infixR "." (Binop OpCompose)]
+  ,
+    [ infixL "*" (Binop OpMul)
+    , -- \* and / have higher precedence than + and -
+      infixL "/" (Binop OpDiv)
+    ]
+  ,
+    [ infixL "+" (Binop OpAdd)
+    , infixL "-" (Binop OpSub)
+    ]
+  ,
+    [ infixN "<=" (Binop OpLeq)
+    , infixN ">=" (Binop OpGeq)
+    , infixN "<" (Binop OpLt)
+    , infixN ">" (Binop OpGt)
+    , infixN "==" (Binop OpEq)
+    , infixN "~=" (Binop OpIso)
+    , infixN "!=" (Binop OpNeq)
+    ]
+  ,
+    [ infixL "<$>" (Binop OpMap)
+    , infixL "<*>" (Binop OpApp)
+    ]
+  , [infixL "and" (Binop OpAnd)]
+  , [infixL "or" (Binop OpOr)]
+  , [infixR "==>" (Binop OpImply)]
+  , [infixL ">>=" (Binop OpBind)]
+  ]
+ where
+  prefix :: String -> (Term -> Term) -> Operator Parser Term
+  prefix name f = Prefix (f <$ symbol name)
+
+  -- Left-associative infix operator (e.g. addition, multiplication)
+  infixL :: String -> (Term -> Term -> Term) -> Operator Parser Term
+  infixL name f = InfixL (f <$ symbol name)
+
+  -- Right-associative infix operator (e.g. function composition)
+  infixR :: String -> (Term -> Term -> Term) -> Operator Parser Term
+  infixR name f = InfixR (f <$ symbol name)
+
+  -- Non-associative infix operator (e.g. comparison operators)
+  infixN :: String -> (Term -> Term -> Term) -> Operator Parser Term
+  infixN name f = InfixN (f <$ symbol name)

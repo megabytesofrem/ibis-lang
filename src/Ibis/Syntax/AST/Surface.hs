@@ -12,13 +12,9 @@ module Ibis.Syntax.AST.Surface
 
     -- * Declarations
   , Param (..)
-  , StructDecl (..)
   , InductiveCtor (..)
-  , InductiveDecl (..)
   , FunctionBody (..)
-  , FunctionDecl (..)
   , CoverRule (..)
-  , SiteDeclaration (..)
   )
 where
 
@@ -40,12 +36,13 @@ data Literal
 data Term
   = -- Universe levels (types are terms, universes classify types)
     Universe Int
+  | Const String -- Constants (e.g., built-in functions, axioms)
   | Var String
   | Lit Literal
   | Unit
   | -- Dependent function types (Π-Types & Lambdas)
     Pi String Term Term -- Π(x : A). B
-  | Lam String Term Term -- λ(x : A). e
+  | Lam String Term -- λ(x : A). e
   | App Term Term -- Unified term application (term or type)
   -- Dependent product types (Σ-Types & Tuples)
   | Sigma String Term Term -- Σ(x : A). B
@@ -99,26 +96,9 @@ data Param = Param
   }
   deriving (Show, Eq)
 
--- Struct type
-data StructDecl = StructDecl
-  { structName :: String
-  , structParams :: [Param]
-  , structFields :: [(String, Term)]
-  }
-  deriving (Show, Eq)
-
 data InductiveCtor = InductiveCtor
   { ctorName :: String
   , ctorType :: Term
-  }
-  deriving (Show, Eq)
-
--- Inductive type
-data InductiveDecl = InductiveDecl
-  { indName :: String
-  , indParams :: [Param]
-  , indArity :: Term -- Index arity + universe level
-  , indConstructors :: [InductiveCtor]
   }
   deriving (Show, Eq)
 
@@ -127,34 +107,36 @@ data FunctionBody
   | TacticBody [Tactic] -- A tactic-based proof body
   deriving (Show, Eq)
 
-data FunctionDecl = FunctionDecl
-  { funcName :: String
-  , funcParams :: [Param]
-  , funcReturnType :: Term
-  , funcBody :: FunctionBody
-  }
-  deriving (Show, Eq)
-
 -- Site declaration and covering rules
-
 data CoverRule = CoverRule
   { parentSite :: String
   , childSites :: [String]
   }
   deriving (Show, Eq)
 
-data SiteDeclaration = SiteDeclaration
-  { siteName :: String
-  , siteCovers :: [CoverRule]
-  }
-  deriving (Show, Eq)
-
 data Decl
   = TermDecl Term
-  | StructDecl' StructDecl
-  | InductiveDecl' InductiveDecl
-  | FunctionDecl' FunctionDecl
-  | SiteDecl SiteDeclaration
+  | StructDecl
+      { structName :: String
+      , structParams :: [Param]
+      , structFields :: [(String, Term)]
+      }
+  | InductiveDecl
+      { indName :: String
+      , indParams :: [Param]
+      , indArity :: Term
+      , indConstructors :: [InductiveCtor]
+      }
+  | FunctionDecl
+      { funcName :: String
+      , funcParams :: [Param]
+      , funcReturnType :: Term
+      , funcBody :: FunctionBody
+      }
+  | SiteDecl
+      { siteDeclName :: String
+      , siteDeclCovers :: [CoverRule]
+      }
   | ImportDecl String (Maybe String) -- import ModuleName [as Alias]
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
   deriving (Show, Eq)

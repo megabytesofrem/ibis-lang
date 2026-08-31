@@ -8,7 +8,7 @@ module Ibis.Syntax.AST.Core
 
     -- * Core Terms
   , CoreTerm (..)
-  , CoreDef (..)
+  , CoreDecl (..)
   , CoreProgram (..)
 
     -- * NbE
@@ -28,7 +28,8 @@ type Closure = (Value -> Value)
 
 data CoreTerm
   = Universe Int
-  | Var DeBruijn
+  | Const String -- Constants (e.g., built-in functions, axioms)
+  | Var DeBruijn -- De Bruijn indexded variable
   | Lit Literal
   | Unit
   | -- Dependent Functions
@@ -51,8 +52,22 @@ data CoreTerm
   | Ext CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- e_{u,v} : Sect A u -> Sect A v
   deriving (Eq)
 
+data CoreDecl
+  = CoreDef
+      { defName :: String -- String retained for diagnostic & symbol linking
+      , defType :: CoreTerm
+      , defBody :: CoreTerm -- Fully desugared core term
+      }
+  | CoreInductive
+      { indName :: String
+      , indType :: CoreTerm
+      , indCtors :: [(String, CoreTerm)] -- Constructor names and their types
+      }
+  deriving (Eq)
+
 data Value
   = VUniverse Int -- Universe levels (types are terms, universes classify types)
+  | VConst String -- Constants (e.g., built-in functions, axioms)
   | VLit Literal
   | VCons Value Value -- List constructor
   | VCtor String [Value] -- Data constructor with name and arguments
@@ -81,19 +96,13 @@ data Neutral
   | NRes Value Value Value Value Neutral
   | NExt Value Value Value Value Neutral
 
-data CoreDef = CoreDef
-  { defName :: String -- String retained for diagnostic & symbol linking
-  , defType :: CoreTerm -- Evaluated to Value during type checking
-  , defBody :: CoreTerm -- Fully desugared core term
-  }
-  deriving (Eq, Show)
-
 ---------------------------------------------
 -- SHOW INSTANCES
 ---------------------------------------------
 
 instance Show CoreTerm where
   show (Universe n) = "Type " ++ show n
+  show (Const name) = name
   show (Var n) = "v" ++ show n
   show (Lit l) = show l
   show Unit = "()"
@@ -113,6 +122,19 @@ instance Show CoreTerm where
   show (Match e branches) =
     let branchStrs = map (\(pat, body) -> show pat ++ " -> " ++ show body) branches
      in "(match " ++ show e ++ " with { " ++ intercalate "; " branchStrs ++ " })"
+  show _ = "<complex term>"
+
+instance Show CoreDecl where
+  show (CoreDef name ty body) =
+    "def " ++ name ++ " : " ++ show ty ++ " := " ++ show body
+  show (CoreInductive name ty ctors) =
+    "inductive "
+      ++ name
+      ++ " : "
+      ++ show ty
+      ++ " where { "
+      ++ intercalate "; " (map (\(ctorName, ctorTy) -> ctorName ++ " : " ++ show ctorTy) ctors)
+      ++ " }"
 
 instance Show Value where
   show (VUniverse n) = "Type " ++ show n
@@ -142,5 +164,5 @@ instance Show Neutral where
 ----------------------------------------------
 
 -- | Core Program: Top-level environment/module
-newtype CoreProgram = CoreProgram [CoreDef]
+newtype CoreProgram = CoreProgram [CoreDecl]
   deriving (Eq, Show)
