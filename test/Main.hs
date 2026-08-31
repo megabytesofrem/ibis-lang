@@ -1,4 +1,8 @@
 module Main (main) where
 
+import Test.Tasty (defaultMain, testGroup)
+
+import ElabTests (elabTests)
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented."
+main = defaultMain =<< testGroup "ibis-lang" <$> sequence [elabTests]

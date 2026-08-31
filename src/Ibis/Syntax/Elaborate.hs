@@ -12,7 +12,7 @@ import Data.List (elemIndex)
 import Data.Map.Strict qualified as M
 
 import Control.Monad.State (MonadState, StateT, get, put, runStateT)
-import Ibis.Syntax.AST (Binop (..), Literal (LitBool), MetaVar (MetaVar), Param (..), SurfaceUniverse (..), Unop (..))
+import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))

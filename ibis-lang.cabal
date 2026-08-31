@@ -110,7 +110,9 @@ test-suite ibis-lang-test
   -- Base language which the package is written in.
   default-language: Haskell2010
   -- Modules included in this executable, other than Main.
-  -- other-modules:
+  other-modules:
+    ElabTests
+
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
   -- The interface type and version of the test suite.
@@ -122,4 +124,8 @@ test-suite ibis-lang-test
   -- Test dependencies.
   build-depends:
     base ^>=4.20.2.0,
+    hspec ^>=2.11.17,
     ibis-lang,
+    megaparsec ^>=9.8.1,
+    tasty ^>=1.5.4,
+    tasty-hspec ^>=1.2.0.4,
