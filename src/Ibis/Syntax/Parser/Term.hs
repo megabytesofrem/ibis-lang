@@ -3,10 +3,10 @@
 module Ibis.Syntax.Parser.Term where
 
 import Control.Monad (guard)
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer qualified as L
 
-import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Ibis.Syntax.AST.Operator (Binop (..), Unop (..))
 import Ibis.Syntax.AST.Surface
 import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pCtorName, pIdent, pLiteral, parens, symbol)
@@ -20,6 +20,9 @@ typedPair = do
   _ <- symbol ":"
   typ <- pExpr
   pure $ Param name typ
+
+arrow :: Parser String
+arrow = symbol "->" <|> symbol "→"
 
 -- Parse a telescope of typed pairs: (x : A) (y : B) ...
 telescope :: Parser [Param]
@@ -81,7 +84,7 @@ pExt = do
   _ <- symbol "ext"
   sect <- pAtom
   srcSite <- pAtom
-  _ <- symbol "->"
+  _ <- arrow
   destSite <- pAtom
   pure $ Ext sect srcSite destSite
 
@@ -152,22 +155,23 @@ pExprTerm =
     , try pLet
     , try pIf
     , try pMatch
+    , try pDoNotation
     , pFuncType
     ]
 
 -- Dependent function types ((x : A) -> B)
 pPi :: Parser Term
 pPi = do
-  _ <- optional (symbol "Π" <|> symbol "Pi")
+  _ <- optional (symbol "Π" <|> symbol "/Pi")
   param <- try $ parens typedPair
-  _ <- symbol "->"
+  _ <- arrow
   body <- pExpr
   pure $ Pi (paramName param) (paramType param) body
 
 -- Dependent product types ((x : A, B))
 pSigma :: Parser Term
 pSigma = do
-  _ <- optional (symbol "Σ" <|> symbol "Sigma")
+  _ <- optional (symbol "Σ" <|> symbol "/Sigma")
   first <- parens typedPair
   _ <- symbol ","
   second <- pExpr
@@ -179,7 +183,7 @@ pFuncType = do
   dom <- pApp
 
   -- Check for an optional codomain after the arrow
-  mCod <- optional (symbol "->" *> pExpr)
+  mCod <- optional (arrow *> pExpr)
   case mCod of
     Just cod -> pure $ Pi "_" dom cod
     Nothing -> pure dom
@@ -221,7 +225,7 @@ pMatchArm :: Parser (Pat, Term)
 pMatchArm = do
   _ <- symbol "|"
   pat <- pPattern
-  _ <- symbol "->"
+  _ <- arrow
   body <- pExpr
   pure (pat, body)
 
@@ -236,6 +240,30 @@ pMatch = do
 -------------------------------------------------------------
 -- DECLARATION PARSERS
 --------------------------------------------------------------
+
+-- Parse do notation:
+--  do { e1; e2; ... }
+--  do
+--   e1
+--   e2
+pDoNotation :: Parser Term
+pDoNotation = do
+  _ <- symbol "do"
+  _ <- optional (symbol "{")
+  terms <- pMonadicTerm `sepBy` (symbol ";" <|> symbol "\n")
+  _ <- optional (symbol "}")
+  pure $ Do terms
+
+pMonadicTerm :: Parser Term
+pMonadicTerm = try pMonadicBind <|> pExpr
+
+-- Parse a monadic bind: x <- e1
+pMonadicBind :: Parser Term
+pMonadicBind = do
+  name <- pIdent
+  _ <- symbol "<-"
+  expr <- pExpr
+  pure $ Bind name expr
 
 -- Parse a covering rule: cover @Parent has {@Child1, @Child2, ...}
 pCoveringRule :: Parser CoverRule
@@ -344,6 +372,8 @@ pDecl =
     , pFunctionDeclaration
     , pSiteDeclaration
     ]
+
+-------------------------------------------------------------
 
 -- Operator precedence and associativity for parsing expressions
 operatorTable :: [[Operator Parser Term]]

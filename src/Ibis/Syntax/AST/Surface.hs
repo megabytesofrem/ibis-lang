@@ -59,6 +59,9 @@ data Term
   | If Term Term Term -- if cond then e1 else e2
   | For String Term Term -- for x in e1: e2
   | Match Term [(Pat, Term)] -- match e with | pat -> e
+  | -- Monadic constructs
+    Do [Term] -- do { e1; e2; ... }
+  | Bind String Term -- x <- e1
   | -- Topological Presheaf Primitives
     Site String -- A topological site
   | Cover Term Term -- Cover u v (u ⩿ v)

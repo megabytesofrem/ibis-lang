@@ -73,6 +73,20 @@ desugarFor var collection body = do
         )
         elabCollection
 
+-- Desugar a monadic do block to a chain of bind operations. For example,
+-- `do { x <- e1; e2 }` is desugared to `e1 >>= (\x -> e2)`.
+desugarMonadicDo :: [Term] -> ElabM CoreTerm
+desugarMonadicDo [] = throwError "Empty do block"
+desugarMonadicDo [term] = elabTerm term
+desugarMonadicDo (Bind name expr : rest) = do
+  elabExpr <- elabTerm expr
+  elabRest <- extendCtx name $ desugarMonadicDo rest
+  pure $
+    Core.App
+      (Core.App (Core.Const ">>=") elabExpr)
+      (Core.Lam (Just name) elabRest)
+desugarMonadicDo (_ : _) = throwError "Invalid do block"
+
 -- | Elaborate a surface term into a core term
 elabTerm :: Term -> ElabM CoreTerm
 elabTerm (Universe n) = pure $ Core.Universe n
@@ -152,6 +166,8 @@ elabTerm (Match scrutinee branches) = do
 
   extendCtxs [] action = action
   extendCtxs (v : vs) action = extendCtx v (extendCtxs vs action)
+elabTerm (Do terms) = desugarMonadicDo terms
+elabTerm (Bind _name _expr) = throwError "Bind should only appear inside a do block"
 ---
 --
 elabTerm tm = throwError $ "Elaboration not implemented for term: " ++ show tm
