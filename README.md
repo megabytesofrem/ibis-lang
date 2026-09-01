@@ -1,6 +1,11 @@
 # Ibis
 
-Ibis is an experimental programming language designed to explore the application of category theory to memory safety
+Ibis is a dependently typed language with a syntax inspired by Lean and Agda built on top 
+of the Calculus of Inductive Constructions (CIC). It extends the CIC with additional constructs for working with presheaves and sheaves and embeds a full compile-time topos
+engine as a 'compile-time borrow checker' to reason about memory safety.
+
+It is a highly experimental language and targets embedded devices which otherwise would
+be limited to C99.
 
 ## Notes
 
