@@ -8,66 +8,103 @@
 module Ibis.Syntax.Elaborate where
 
 import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Reader (MonadReader, ReaderT, ask, local, runReaderT)
+import Control.Monad.State (MonadState, StateT, get, put, runStateT)
+import Data.IntMap.Strict qualified as IM
 import Data.List (elemIndex)
 import Data.Map.Strict qualified as M
 
-import Control.Monad.State (MonadState, StateT, get, put, runStateT)
 import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
 
+-- Local scope tracking for variable bindings during elaboration
+type LocalScope = [String]
+
 data ElabCtx = ElabCtx
-  { nameMap :: M.Map String Int -- Mapping from variable names to De Bruijn indices
-  , currentDepth :: Int -- Current depth in the context for De Bruijn indices
-  , universeMap :: M.Map String Int -- Mapping from universe names to their levels
-  , nextLevel :: Int -- Next available universe level for fresh universes
+  { scope :: LocalScope -- Current local scope for variable bindings
   }
   deriving (Show, Eq)
+
+data ElabState = ElabState
+  { universeMap :: M.Map String Int -- Mapping from universe names to their levels
+  , metavars :: IM.IntMap MetaVar -- Metavariable state for unification and elaboration
+  , nextLevel :: Int -- Next available universe level for fresh universes
+  , nextMetaVarId :: Int -- Next available metavariable ID
+  }
+  deriving (Show, Eq)
+
+-- | Metavariable state for unification and elaboration
+data MetaVar
+  = Hole LocalScope CoreTerm -- A hole that needs to be solved
+  | Solved CoreTerm -- A metavariable that has been solved
+  deriving (Show, Eq)
+
+-- Keep track of metavariables and their solve states during elaboration
+type MetaVarMap = IM.IntMap MetaVar
 
 emptyElabCtx :: ElabCtx
 emptyElabCtx =
   ElabCtx
-    { nameMap = M.empty
-    , currentDepth = 0
-    , universeMap = M.empty
-    , nextLevel = 1 -- Universes start from 1, as 0 is reserved for Prop
+    { scope = []
+    }
+
+emptyElabState :: ElabState
+emptyElabState =
+  ElabState
+    { universeMap = M.empty
+    , metavars = IM.empty
+    , nextLevel = 0
+    , nextMetaVarId = 0
     }
 
 -- | Elaboration monad used for elaborating surface syntax into core syntax
-newtype ElabM a = ElabM {runElabM :: StateT ElabCtx (Either String) a}
+newtype ElabM a = ElabM {runElabM :: ReaderT ElabCtx (StateT ElabState (Either String)) a}
   deriving
     ( Functor
     , Applicative
     , Monad
-    , MonadState ElabCtx
+    , MonadReader ElabCtx
+    , MonadState ElabState
     , MonadError String
     )
 
 lookupName :: String -> ElabM Int
 lookupName name = do
-  ctx <- get
-  case M.lookup name (nameMap ctx) of
-    Just depth -> pure (currentDepth ctx - depth - 1) -- Convert to De Bruijn index
+  ctx <- ask
+  case elemIndex name (scope ctx) of
+    Just depth -> pure (length (scope ctx) - depth - 1)
     Nothing -> throwError $ "Unbound variable: " ++ name
 
-localState :: (MonadState s m) => (s -> s) -> m a -> m a
-localState f action = do
-  orig <- get
-  put (f orig)
-  result <- action
-  put orig
-  pure result
-
 extendCtx :: String -> ElabM a -> ElabM a
-extendCtx name action = localState updateCtx action
- where
-  updateCtx (ElabCtx nmap depth uMap next) =
-    ElabCtx
-      (M.insert name depth nmap)
-      (depth + 1)
-      uMap
-      next
+extendCtx name action =
+  local (\ctx -> ctx{scope = name : scope ctx}) action
+
+freshMetaVar :: CoreTerm -> ElabM Int
+freshMetaVar holety = do
+  ctx <- ask
+  st <- get
+
+  -- Generate a fresh metavariable ID and insert it into the map
+  let mvar = nextMetaVarId st
+      hole = Hole (scope ctx) holety
+  put
+    st
+      { metavars = IM.insert mvar hole (metavars st)
+      , nextMetaVarId = mvar + 1
+      }
+  pure mvar
+
+solveMetaVar :: Int -> CoreTerm -> ElabM ()
+solveMetaVar mvar term = do
+  st <- get
+  case IM.lookup mvar (metavars st) of
+    Just (Hole _ _) -> do
+      -- Update the metavariable state to mark it as solved
+      put $ st{metavars = IM.insert mvar (Solved term) (metavars st)}
+    Just (Solved _) -> throwError $ "Metavariable " ++ show mvar ++ " is already solved."
+    Nothing -> throwError $ "Metavariable " ++ show mvar ++ " does not exist."
 
 -- | Get the universe level for a given universe name, assigning a new level if it doesn't exist
 getOrAssignUniverse :: String -> ElabM Int
@@ -242,8 +279,8 @@ elabTerm tm = case tm of
     pure $ Core.Sect elabA elabU
 
   -- TODO: Figure out how to synthesize a proof term for Ext/Res
-  Res u v -> throwError "Res elaboration not implemented yet"
-  Ext a u v -> throwError "Ext elaboration not implemented yet"
+  Res _u _v -> throwError "Res elaboration not implemented yet"
+  Ext _a _u _v -> throwError "Ext elaboration not implemented yet"
 
 elabDecl :: Decl -> ElabM [CoreDecl]
 elabDecl (TermDecl term) = do
@@ -333,5 +370,5 @@ binopToString :: Binop -> String
 binopToString = show
 
 -- | Run the elaboration monad with a given context
-runElaboration :: ElabM a -> ElabCtx -> Either String (a, ElabCtx)
-runElaboration elab ctx = runStateT (runElabM elab) ctx
+runElaboration :: ElabM a -> ElabCtx -> Either String (a, ElabState)
+runElaboration elab ctx = runStateT (runReaderT (runElabM elab) ctx) emptyElabState
