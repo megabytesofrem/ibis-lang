@@ -2,126 +2,32 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
 {- |
-  Module      : Ibis.Syntax.Elaborate
+  Module      : Ibis.Typecheck.Elab
   Description : Elaborates surface syntax into core syntax and desugars syntactic sugar.
 -}
-module Ibis.Syntax.Elaborate where
+module Ibis.Typecheck.Elab
+  ( elabTerm
+  , elabDecl
+  , elabInductive
+  )
+where
 
-import Control.Monad.Except (MonadError, throwError)
-import Control.Monad.Reader (MonadReader, ReaderT, ask, local, runReaderT)
-import Control.Monad.State (MonadState, StateT, get, put, runStateT)
-import Data.IntMap.Strict qualified as IM
+import Control.Monad.Except (throwError)
 import Data.List (elemIndex)
-import Data.Map.Strict qualified as M
 
 import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
 
--- Local scope tracking for variable bindings during elaboration
-type LocalScope = [String]
+import Ibis.Typecheck.Error (TcError (..))
+import Ibis.Typecheck.MVar
+import Ibis.Typecheck.Types
 
-data ElabCtx = ElabCtx
-  { scope :: LocalScope -- Current local scope for variable bindings
-  }
-  deriving (Show, Eq)
+-------------------------------------------------------------
+-- ELABORATION PASS
+-------------------------------------------------------------
 
-data ElabState = ElabState
-  { universeMap :: M.Map String Int -- Mapping from universe names to their levels
-  , metavars :: IM.IntMap MetaVar -- Metavariable state for unification and elaboration
-  , nextLevel :: Int -- Next available universe level for fresh universes
-  , nextMetaVarId :: Int -- Next available metavariable ID
-  }
-  deriving (Show, Eq)
-
--- | Metavariable state for unification and elaboration
-data MetaVar
-  = Hole LocalScope CoreTerm -- A hole that needs to be solved
-  | Solved CoreTerm -- A metavariable that has been solved
-  deriving (Show, Eq)
-
--- Keep track of metavariables and their solve states during elaboration
-type MetaVarMap = IM.IntMap MetaVar
-
-emptyElabCtx :: ElabCtx
-emptyElabCtx =
-  ElabCtx
-    { scope = []
-    }
-
-emptyElabState :: ElabState
-emptyElabState =
-  ElabState
-    { universeMap = M.empty
-    , metavars = IM.empty
-    , nextLevel = 0
-    , nextMetaVarId = 0
-    }
-
--- | Elaboration monad used for elaborating surface syntax into core syntax
-newtype ElabM a = ElabM {runElabM :: ReaderT ElabCtx (StateT ElabState (Either String)) a}
-  deriving
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadReader ElabCtx
-    , MonadState ElabState
-    , MonadError String
-    )
-
-lookupName :: String -> ElabM Int
-lookupName name = do
-  ctx <- ask
-  case elemIndex name (scope ctx) of
-    Just depth -> pure (length (scope ctx) - depth - 1)
-    Nothing -> throwError $ "Unbound variable: " ++ name
-
-extendCtx :: String -> ElabM a -> ElabM a
-extendCtx name action =
-  local (\ctx -> ctx{scope = name : scope ctx}) action
-
-freshMetaVar :: CoreTerm -> ElabM Int
-freshMetaVar holety = do
-  ctx <- ask
-  st <- get
-
-  -- Generate a fresh metavariable ID and insert it into the map
-  let mvar = nextMetaVarId st
-      hole = Hole (scope ctx) holety
-  put
-    st
-      { metavars = IM.insert mvar hole (metavars st)
-      , nextMetaVarId = mvar + 1
-      }
-  pure mvar
-
-solveMetaVar :: Int -> CoreTerm -> ElabM ()
-solveMetaVar mvar term = do
-  st <- get
-  case IM.lookup mvar (metavars st) of
-    Just (Hole _ _) -> do
-      -- Update the metavariable state to mark it as solved
-      put $ st{metavars = IM.insert mvar (Solved term) (metavars st)}
-    Just (Solved _) -> throwError $ "Metavariable " ++ show mvar ++ " is already solved."
-    Nothing -> throwError $ "Metavariable " ++ show mvar ++ " does not exist."
-
--- | Get the universe level for a given universe name, assigning a new level if it doesn't exist
-getOrAssignUniverse :: String -> ElabM Int
-getOrAssignUniverse name = do
-  ctx <- get
-  case M.lookup name (universeMap ctx) of
-    Just level -> pure level
-    Nothing -> do
-      let newLevel = nextLevel ctx
-      put $
-        ctx
-          { universeMap = M.insert name newLevel (universeMap ctx)
-          , nextLevel = newLevel + 1
-          }
-      pure newLevel
-
--- Extract variable bindings from patterns
 extractPatternVars :: Pat -> [String]
 extractPatternVars (PLit _) = []
 extractPatternVars (PCapture name) = [name]
@@ -148,7 +54,7 @@ desugarFor var collection body = do
 -- Desugar a monadic do block to a chain of bind operations. For example,
 -- `do { x <- e1; e2 }` is desugared to `e1 >>= (\x -> e2)`.
 desugarMonadicDo :: [Term] -> ElabM CoreTerm
-desugarMonadicDo [] = throwError "Empty do block"
+desugarMonadicDo [] = throwError EmptyDoBlock
 desugarMonadicDo [term] = elabTerm term
 desugarMonadicDo (Bind name expr : rest) = do
   elabExpr <- elabTerm expr
@@ -157,7 +63,7 @@ desugarMonadicDo (Bind name expr : rest) = do
     Core.App
       (Core.App (Core.Const ">>=") elabExpr)
       (Core.Lam (Just name) elabRest)
-desugarMonadicDo (_ : _) = throwError "Invalid do block"
+desugarMonadicDo (_ : _) = throwError $ EmptyBindOutsideDo
 
 elabUniverse :: SurfaceUniverse -> ElabM CoreTerm
 elabUniverse (UnivName name) = do
@@ -262,7 +168,7 @@ elabTerm tm = case tm of
   --
   -- Monadic constructs
   Do terms -> desugarMonadicDo terms
-  Bind _name _expr -> throwError "Bind should only appear inside a do block"
+  Bind _name _expr -> throwError EmptyBindOutsideDo
   --
   -- Topological Presheaf Primitives
   Site name -> do
@@ -279,8 +185,8 @@ elabTerm tm = case tm of
     pure $ Core.Sect elabA elabU
 
   -- TODO: Figure out how to synthesize a proof term for Ext/Res
-  Res _u _v -> throwError "Res elaboration not implemented yet"
-  Ext _a _u _v -> throwError "Ext elaboration not implemented yet"
+  Res _u _v -> throwError $ Other "Res elaboration not implemented yet"
+  Ext _a _u _v -> throwError $ Other "Ext elaboration not implemented yet"
 
 elabDecl :: Decl -> ElabM [CoreDecl]
 elabDecl (TermDecl term) = do
@@ -289,7 +195,7 @@ elabDecl (TermDecl term) = do
 elabDecl (StructDecl sname params fields) = elabStruct sname params fields
 --
 
-elabDecl _ = throwError "Elaboration for this declaration type is not implemented yet."
+elabDecl _ = throwError $ Other "Elaboration for this declaration type is not implemented yet."
 
 -- Elaborate a structure into an inductive type
 elabStruct :: String -> [Param] -> [(String, Term)] -> ElabM [CoreDecl]
@@ -345,7 +251,7 @@ genProjection sname fieldName fields = do
   -- Get the index of the target field and it's corresponding type
   (targetIdx, fTy) <- case fieldName `elemIndex` (map fst fields) of
     Just idx -> pure (idx, snd (fields !! idx))
-    Nothing -> throwError $ "Field " ++ fieldName ++ " not found in structure " ++ sname
+    Nothing -> throwError $ FieldNotFound sname fieldName
 
   elabFTy <- elabTerm fTy
   let projName = sname ++ "_" ++ fieldName
@@ -368,7 +274,3 @@ unopToString = show
 
 binopToString :: Binop -> String
 binopToString = show
-
--- | Run the elaboration monad with a given context
-runElaboration :: ElabM a -> ElabCtx -> Either String (a, ElabState)
-runElaboration elab ctx = runStateT (runReaderT (runElabM elab) ctx) emptyElabState

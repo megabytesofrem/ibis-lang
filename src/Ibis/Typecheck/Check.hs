@@ -10,7 +10,8 @@ import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, asks, local)
 
 import Ibis.Syntax.AST.Core
-import Ibis.Typecheck.Eval (convert, eval, evalFst, isDefEq, readBack)
+import Ibis.Typecheck.Error (TcError (..))
+import Ibis.Typecheck.Eval (convert, eval, evalFst, readBack)
 
 data TypecheckCtx = TypecheckCtx
   { env :: [Value]
@@ -20,13 +21,13 @@ data TypecheckCtx = TypecheckCtx
   }
 
 -- | Typecheck monad used for type checking and inference
-newtype TypecheckM a = TypecheckM {runTypechecker :: ReaderT TypecheckCtx (Either String) a}
+newtype TypecheckM a = TypecheckM {runTypechecker :: ReaderT TypecheckCtx (Either TcError) a}
   deriving
     ( Functor
     , Applicative
     , Monad
     , MonadReader TypecheckCtx
-    , MonadError String
+    , MonadError TcError
     )
 
 lookupType :: DeBruijn -> TypecheckM Value
@@ -34,14 +35,14 @@ lookupType idx = do
   ctx <- asks typingCtx
   if idx < length ctx
     then pure (ctx !! idx)
-    else throwError $ "Unbound type variable: " ++ show idx
+    else throwError $ UnboundTypeVariable (show idx)
 
 lookupValue :: DeBruijn -> TypecheckM Value
 lookupValue idx = do
   ctx <- asks env
   if idx < length ctx
     then pure (ctx !! idx)
-    else throwError $ "Unbound variable: " ++ show idx
+    else throwError $ UnboundVariable (show idx)
 
 withBinding :: Value -> Value -> TypecheckM a -> TypecheckM a
 withBinding v ty =
@@ -59,7 +60,9 @@ withBinding v ty =
 -- NOTE: Universe 0 is the universe of propositions, Universe 1 is the universe of types, and so on.
 universeLevel :: Value -> TypecheckM Int
 universeLevel (VUniverse n) = pure n
-universeLevel v = throwError $ "Type mismatch: Expected a universe type, but got: " ++ show v
+universeLevel v =
+  throwError . TypeMismatch $
+    "Type mismatch: Expected a universe type, but got: " ++ show v
 
 -- | Check a term against an expected type, throwing an error if they do not match
 check :: CoreTerm -> Value -> TypecheckM ()
@@ -76,7 +79,7 @@ check term ty = case (term, ty) of
   (Lam _ _, expectedTy) -> do
     depth <- asks (length . typingCtx)
     let normExpected = readBack depth expectedTy
-    throwError $
+    throwError . TypeMismatch $
       "Type mismatch: Expected a dependent function type (Pi) for lambda abstraction, but got: "
         ++ show normExpected
   -- Pair constructor: checked against a dependent product type (Sigma)
@@ -90,7 +93,7 @@ check term ty = case (term, ty) of
   (Pair _ _, expectedTy) -> do
     depth <- asks (length . typingCtx)
     let normExpected = readBack depth expectedTy
-    throwError $
+    throwError . TypeMismatch $
       "Type mismatch: Expected a dependent product type (Sigma) for pair constructor, but got: "
         ++ show normExpected
   --
@@ -104,7 +107,7 @@ check term ty = case (term, ty) of
       else do
         let normExpected = readBack depth expectedTy
             normInferred = readBack depth inferredTy
-        throwError $
+        throwError . TypeMismatch $
           "Type mismatch:\n Expected: "
             ++ show normExpected
             ++ "\n  Inferred: "
@@ -155,7 +158,7 @@ infer term = case term of
       _ -> do
         depth <- asks (length . typingCtx)
         let normFty = readBack depth fTy
-        throwError $
+        throwError . TypeMismatch $
           "Type mismatch: Expected a function type (Pi or ->) for application, but got: "
             ++ show normFty
   --
@@ -184,7 +187,7 @@ infer term = case term of
       _ -> do
         depth <- asks (length . typingCtx)
         let normPty = readBack depth pTy
-        throwError $
+        throwError . TypeMismatch $
           "Type mismatch: Expected a dependent product type (Sigma) for fst, but got: "
             ++ show normPty
   Snd p -> do
@@ -197,21 +200,21 @@ infer term = case term of
       _ -> do
         depth <- asks (length . typingCtx)
         let normPty = readBack depth pTy
-        throwError $
+        throwError . TypeMismatch $
           "Type mismatch: Expected a dependent product type (Sigma) for snd, but got: "
             ++ show normPty
   Pair _ _ -> do
     env' <- asks env
     depth <- asks (length . typingCtx)
     let normTerm = readBack depth (eval env' term)
-    throwError $ "Cannot infer type for pair constructor: " ++ show normTerm
+    throwError . CannotInferType $ "Cannot infer type for pair constructor: " ++ show normTerm
   Lam _ _ -> do
     env' <- asks env
     depth <- asks (length . typingCtx)
     let normTerm = readBack depth (eval env' term)
-    throwError $ "Cannot infer type for lambda abstraction: " ++ show normTerm
+    throwError . CannotInferType $ "Cannot infer type for lambda abstraction: " ++ show normTerm
   _ -> do
     env' <- asks env
     depth <- asks (length . typingCtx)
     let normTerm = readBack depth (eval env' term)
-    throwError $ "Cannot infer type for term (" ++ show term ++ "): " ++ show normTerm
+    throwError . CannotInferType $ "Cannot infer type for term (" ++ show term ++ "): " ++ show normTerm

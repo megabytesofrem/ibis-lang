@@ -53,7 +53,6 @@ library
     Ibis.Syntax.AST.Core
     Ibis.Syntax.AST.Operator
     Ibis.Syntax.AST.Surface
-    Ibis.Syntax.Elaborate
     Ibis.Syntax.Parser
     Ibis.Syntax.Parser.Lexer
     Ibis.Syntax.Parser.Pattern
@@ -61,7 +60,11 @@ library
     Ibis.Syntax.Parser.Term
     Ibis.Tactics.Prover
     Ibis.Typecheck.Check
+    Ibis.Typecheck.Elab
+    Ibis.Typecheck.Error
     Ibis.Typecheck.Eval
+    Ibis.Typecheck.MVar
+    Ibis.Typecheck.Types
 
   ----
   -- Modules included in this library but not exported.

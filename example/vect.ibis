@@ -1,0 +1,5 @@
+inductive Vect (a : Type u) : Nat n -> Type u where
+  Nil : Vect a 0
+  Cons : (x: a) -> (xs: Vect a n) -> Vect a (n + 1)
+
+def newVect (a : Type u) (len : Nat) := Vect.mk a len

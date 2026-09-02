@@ -9,8 +9,10 @@ import Text.Megaparsec (eof, parse)
 import Control.Monad (unless)
 import Data.Either (isLeft)
 import Ibis.Syntax.AST.Core qualified as Core
-import Ibis.Syntax.Elaborate (elabDecl, elabTerm, emptyElabCtx, runElaboration)
 import Ibis.Syntax.Parser (pDecl, pExpr)
+import Ibis.Typecheck.Elab (elabDecl, elabTerm)
+import Ibis.Typecheck.Types (emptyElabCtx, runElaboration)
+
 import Test.Hspec
 
 elabTests :: IO TestTree
@@ -30,7 +32,7 @@ spec =
         let term = unwrap result
         let result' = runElaboration (elabTerm term) emptyElabCtx
         case result' of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ show err
           Right (Core.Universe 1, _) -> pure ()
           Right (got, _) ->
             expectationFailure ("expected Type u to elaborate to Universe 1, got: " ++ show got)
@@ -41,7 +43,7 @@ spec =
         let term = unwrap result
         let result' = runElaboration (elabTerm term) emptyElabCtx
         case result' of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ show err
           Right (Core.Universe 7, _) -> pure ()
           Right (got, _) ->
             expectationFailure ("expected Type 7 to elaborate to Universe 7, got: " ++ show got)
@@ -59,7 +61,7 @@ spec =
         let term = unwrap result
         let result' = runElaboration (elabDecl term) emptyElabCtx
         case result' of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ show err
           Right (decls, _) -> case decls of
             [Core.CoreInductive _ _ _] -> pure ()
             [got] ->
@@ -80,7 +82,7 @@ spec =
         let term = unwrap result
         let result' = runElaboration (elabDecl term) emptyElabCtx
         case result' of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ show err
           Right (decls, _) -> case decls of
             [Core.CoreInductive _ _ ctors] -> do
               let ctorNames = map fst ctors
@@ -96,7 +98,7 @@ spec =
         let term = unwrap result
         let result' = runElaboration (elabDecl term) emptyElabCtx
         case result' of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ show err
           Right (decls, _) -> case decls of
             [Core.CoreInductive _ _ ctors] -> do
               let projectionNames = map fst ctors
