@@ -16,7 +16,7 @@ import Control.Monad.Except (throwError)
 import Data.List (elemIndex)
 
 import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
-import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm)
+import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm, Index (..))
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
 
@@ -79,7 +79,7 @@ elabTerm tm = case tm of
   MVar name -> pure $ Core.MVar name
   Var name -> do
     idx <- lookupName name
-    pure $ Core.Var idx
+    pure $ Core.Var (toEnum idx)
   Lit lit -> pure $ Core.Lit lit
   Unit -> pure Core.Unit
   Pi name ty body -> do
@@ -174,7 +174,7 @@ elabTerm tm = case tm of
   Site name -> do
     -- TODO: should this use lookupName or its own map?
     idx <- lookupName name
-    pure $ Core.Site idx
+    pure $ Core.Site (toEnum idx)
   Cover u v -> do
     elabU <- elabTerm u
     elabV <- elabTerm v
@@ -262,7 +262,7 @@ genProjection sname fieldName fields = do
   let patVars = [PCapture ("v" ++ show i) | (i, _) <- zip [(0 :: Integer) ..] fields]
       ctorPat = PCtor ctorName patVars
 
-  let targetVar = Core.Var (length fields - targetIdx - 1)
+  let targetVar = Core.Var (Index $ length fields - targetIdx - 1)
   let body =
         Core.Lam (Just "self") $
           Core.Match (Core.Var 0) [(ctorPat, targetVar)]

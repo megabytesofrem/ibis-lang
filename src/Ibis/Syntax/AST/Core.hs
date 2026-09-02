@@ -1,10 +1,15 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 {- |
   Module      : Ibis.Syntax.AST.Core
   Description : Core syntax of the Ibis language
 -}
 module Ibis.Syntax.AST.Core
   ( -- * Debruijn indices
-    DeBruijn
+    Index (..)
+  , Level (..)
+  , Spine
 
     -- * Core Terms
   , CoreTerm (..)
@@ -20,8 +25,19 @@ where
 import Data.List (intercalate)
 import Ibis.Syntax.AST.Surface (Literal (..), Pat (..))
 
--- | De Bruijn index for variables and type variables.
-type DeBruijn = Int
+-- | De Bruijn index for variables and type variables, relative
+-- distance to binder (where 0 is the innermost lambda).
+newtype Index = Index {unIndex :: Int}
+  deriving stock (Show, Eq, Ord)
+  deriving newtype (Enum, Num, Real, Integral)
+
+-- | De Bruijn levels for rigid variables.
+newtype Level = Level {unLevel :: Int}
+  deriving stock (Show, Eq, Ord)
+  deriving newtype (Num, Enum)
+
+-- | Spines are lists of values applied to a rigid or flexible head.
+type Spine = [Value]
 
 -- | Closure type for functions in the NbE evaluator.
 type Closure = (Value -> Value)
@@ -30,7 +46,7 @@ data CoreTerm
   = Universe Int
   | Const String -- Constants (e.g., built-in functions, axioms)
   | MVar String -- Meta-variable for unification
-  | Var DeBruijn -- De Bruijn indexded variable
+  | Var Index -- De Bruijn indexded variable
   | Lit Literal
   | Unit
   | -- Dependent Functions
@@ -43,11 +59,11 @@ data CoreTerm
   | Fst CoreTerm -- fst p
   | Snd CoreTerm -- snd p
   -- Language constructs
-  | Let DeBruijn CoreTerm CoreTerm -- let x = e in body
+  | Let Index CoreTerm CoreTerm -- let x = e in body
   | Ann CoreTerm CoreTerm -- e : A
   | Match CoreTerm [(Pat, CoreTerm)]
   | -- Topological primitives
-    Site DeBruijn -- A topological site
+    Site Index -- A topological site
   | Cover CoreTerm CoreTerm -- Cover u v (u ⩿ v)
   | Sect CoreTerm CoreTerm -- Sect A u
   | Res CoreTerm CoreTerm CoreTerm CoreTerm CoreTerm -- res u v a proof site
@@ -81,11 +97,14 @@ data Value
     VSigma (Maybe String) Value Closure
   | VPair Value Value
   | -- Topological primitives
-    VSite DeBruijn
+    VSite Index
   | VCover Value Value
   | VSect Value Value
   | -- Stuck
     VNeutral Value Neutral
+  | -- Metavariables
+    VRigid Level Spine
+  | VFlex Int Spine
 
 -- Neutral terms represent computations that are "stuck" on a variable or a neutral term,
 -- which cannot be further evaluated.

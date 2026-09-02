@@ -5,6 +5,7 @@
 module Ibis.Typecheck.Eval where
 
 import Control.Monad (zipWithM)
+import Data.Char (isDigit)
 import Ibis.Syntax.AST (Pat (..))
 import Ibis.Syntax.AST.Core
 
@@ -15,17 +16,17 @@ isDefEq :: Env -> CoreTerm -> CoreTerm -> Bool
 isDefEq env t1 t2 =
   let v1 = eval env t1
       v2 = eval env t2
-   in convert (length env) v1 v2
+   in convert (Index . length $ env) v1 v2
 
 -- Equality check for two values in a given environment
 equal :: Env -> Value -> Value -> Bool
-equal env v1 v2 = convert (length env) v1 v2
+equal env v1 v2 = convert (Index . length $ env) v1 v2
 
 -- Convert two values to their normal forms and check for equality using
 -- their read-back representations
-convert :: DeBruijn -> Value -> Value -> Bool
+convert :: Index -> Value -> Value -> Bool
 convert depth v1 v2 =
-  readBack depth v1 == readBack depth v2
+  quote depth v1 == quote depth v2
 
 -- | Safe lookup in the environment, handles out-of-bounds indices gracefully
 lookupEnv :: Int -> Env -> Maybe Value
@@ -41,7 +42,8 @@ eval :: Env -> CoreTerm -> Value
 eval env term = case term of
   Universe n -> VUniverse n
   Const name -> VConst name
-  Var n -> case lookupEnv n env of
+  MVar name -> VFlex (metaIdFromName name) []
+  Var n -> case lookupEnv (unIndex n) env of
     Just v -> v
     Nothing -> error $ "Unbound variable at index: " ++ show n
   Lit l -> VLit l
@@ -166,6 +168,8 @@ evalSnd _ = error "Cannot take snd of non-pair value"
 evalApp :: Value -> Value -> Value
 evalApp (VLam _ dom f) x = f x
 evalApp (VNeutral (VPi _ _ cod) neu) x = VNeutral (cod x) (NApp neu x)
+evalApp (VFlex m spine) x = VFlex m (spine ++ [x])
+evalApp (VRigid lvl spine) x = VRigid lvl (spine ++ [x])
 evalApp _ _ = error "Cannot apply non-function value"
 
 evalRes :: Value -> Value -> Value -> Value -> Value -> Value
@@ -176,57 +180,83 @@ evalExt :: Value -> Value -> Value -> Value -> Value -> Value
 evalExt a u v proof (VNeutral _ neu) = VNeutral (VSect a v) (NExt a u v proof neu)
 evalExt _ _ _ _ concreteSection = concreteSection
 
+applyVal :: Value -> Value -> Either String Value
+applyVal fn arg = case fn of
+  -- 1. Beta reduction: Substitute the argument into the closure body
+  VLam _ _ body -> Right $ body arg
+  -- 2. Neutral / Rigid variable: Append argument to the spine
+  VRigid lvl spine -> Right $ VRigid lvl (spine ++ [arg])
+  -- 3. Flexible metavariable: Append argument to the spine
+  VFlex mvar spine -> Right $ VFlex mvar (spine ++ [arg])
+  -- 4. Neutral term: Append argument to neutral application
+  VNeutral ty (NVar idx) -> Right $ VNeutral ty (NApp (NVar idx) arg)
+  _ -> Left "Attempted to apply a non-function value"
+
 ---------------------------------------------
--- READ BACK
+-- QUOTING
 ---------------------------------------------
 
 --  Convert the Value back into a CoreTerm
-readBack :: DeBruijn -> Value -> CoreTerm
-readBack depth val = case val of
+quote :: (Integral a) => a -> Value -> CoreTerm
+quote depth = quoteInt (fromIntegral depth)
+
+quoteInt :: Int -> Value -> CoreTerm
+quoteInt depth val = case val of
   VUniverse n -> Universe n
   VLit l -> Lit l
   VUnit -> Unit
   VPi name dom cod ->
     let fresh = VNeutral dom (NVar depth)
         cod' = cod fresh
-     in Pi name (readBack depth dom) (readBack (depth + 1) cod')
+     in Pi name (quoteInt depth dom) (quoteInt (depth + 1) cod')
   VLam name dom body ->
     let fresh = VNeutral dom (NVar depth)
         body' = body fresh
-     in Lam name (readBack (depth + 1) body')
+     in Lam name (quoteInt (depth + 1) body')
   VSigma name dom cod ->
     let fresh = VNeutral dom (NVar depth)
         cod' = cod fresh
-     in Sigma name (readBack depth dom) (readBack (depth + 1) cod')
-  VPair a b -> Pair (readBack depth a) (readBack depth b)
+     in Sigma name (quoteInt depth dom) (quoteInt (depth + 1) cod')
+  VPair a b -> Pair (quoteInt depth a) (quoteInt depth b)
   VSite name -> Site name
-  VCover u v -> Cover (readBack depth u) (readBack depth v)
-  VSect a u -> Sect (readBack depth a) (readBack depth u)
-  VNeutral ty neu -> readBackNeutral depth ty neu
+  VCover u v -> Cover (quoteInt depth u) (quoteInt depth v)
+  VSect a u -> Sect (quoteInt depth a) (quoteInt depth u)
+  VNeutral ty neu -> quoteNeutralInt depth ty neu
+  VRigid lvl spine -> foldl App (Var (Index (depth - unLevel lvl - 1))) (map (quoteInt depth) spine)
+  VFlex m spine -> foldl App (MVar ("m" ++ show m)) (map (quoteInt depth) spine)
   _ -> error "Read back for this value is not implemented yet"
 
 -- Convert a neutral term back into a CoreTerm, given its type and the current De Bruijn depth
-readBackNeutral :: DeBruijn -> Value -> Neutral -> CoreTerm
-readBackNeutral depth ty neu = case neu of
-  NVar idx -> Var (depth - idx - 1)
-  NApp n x -> App (readBackNeutral depth ty n) (readBack depth x)
-  NFst n -> Fst (readBackNeutral depth ty n)
-  NSnd n -> Snd (readBackNeutral depth ty n)
+quoteNeutral :: (Integral a) => a -> Value -> Neutral -> CoreTerm
+quoteNeutral depth = quoteNeutralInt (fromIntegral depth)
+
+quoteNeutralInt :: Int -> Value -> Neutral -> CoreTerm
+quoteNeutralInt depth ty neu = case neu of
+  NVar idx -> Var (Index (depth - idx - 1))
+  NApp n x -> App (quoteNeutralInt depth ty n) (quoteInt depth x)
+  NFst n -> Fst (quoteNeutralInt depth ty n)
+  NSnd n -> Snd (quoteNeutralInt depth ty n)
   NMatch n branches ->
-    let readBackBranch (pat, body) = (pat, readBack (depth + countPatternVars pat) body)
-     in Match (readBackNeutral depth ty n) (map readBackBranch branches)
+    let readBackBranch (pat, body) = (pat, quoteInt (depth + countPatternVars pat) body)
+     in Match (quoteNeutralInt depth ty n) (map readBackBranch branches)
   -- Dummy cases for topological presheaf primitives
   NRes a u v proof neu ->
     Res
-      (readBack depth a)
-      (readBack depth u)
-      (readBack depth v)
-      (readBack depth proof)
-      (readBackNeutral depth (VSect a v) neu)
+      (quoteInt depth a)
+      (quoteInt depth u)
+      (quoteInt depth v)
+      (quoteInt depth proof)
+      (quoteNeutralInt depth (VSect a v) neu)
   NExt a u v proof neu ->
     Ext
-      (readBack depth a)
-      (readBack depth u)
-      (readBack depth v)
-      (readBack depth proof)
-      (readBackNeutral depth (VSect a u) neu)
+      (quoteInt depth a)
+      (quoteInt depth u)
+      (quoteInt depth v)
+      (quoteInt depth proof)
+      (quoteNeutralInt depth (VSect a u) neu)
+
+metaIdFromName :: String -> Int
+metaIdFromName name =
+  case reads (dropWhile (not . isDigit) name) of
+    [(metaId, "")] -> metaId
+    _ -> error $ "Invalid metavariable name: " ++ name

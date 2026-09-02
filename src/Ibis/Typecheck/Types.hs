@@ -1,3 +1,4 @@
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
@@ -13,6 +14,8 @@ module Ibis.Typecheck.Types
     -- * Context and state
   , ElabCtx (..)
   , ElabState (..)
+  , Level (..)
+  , Spine
   , MetaVar (..)
   , MetaVarMap
   , emptyElabCtx
@@ -35,7 +38,7 @@ import Data.IntMap.Strict qualified as IM
 import Data.List (elemIndex)
 import Data.Map.Strict qualified as M
 
-import Ibis.Syntax.AST.Core (CoreTerm)
+import Ibis.Syntax.AST.Core (CoreTerm, Index (..), Level (..), Spine, Value)
 import Ibis.Typecheck.Error (TcError (..))
 
 -------------------------------------------------------------
@@ -76,10 +79,6 @@ emptyElabState =
     , nextLevel = 1 -- Universe 0 is reserved for Prop
     , nextMetaVarId = 0
     }
-
--------------------------------------------------------------
--- METAVARIABLES
--------------------------------------------------------------
 
 -- | A metavariable is either an unsolved hole (carrying the local scope it was
 -- created in and its expected type) or a solved term.
@@ -124,3 +123,9 @@ lookupName name = do
 
 extendCtx :: String -> ElabM a -> ElabM a
 extendCtx name = local (\ctx -> ctx{scope = name : scope ctx})
+
+indexToLevel :: Index -> Level -> Level
+indexToLevel (Index idx) (Level depth) = Level (depth - idx - 1)
+
+levelToIndex :: Level -> Level -> Index
+levelToIndex (Level depth) (Level level) = Index (depth - level - 1)
