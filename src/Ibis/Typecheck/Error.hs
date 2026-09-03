@@ -1,7 +1,4 @@
-{- |
-  Module : Ibis.Typecheck.Error
-  Description : Error types for the typechecker
--}
+-- | Error types for the typechecker
 module Ibis.Typecheck.Error
   ( TcError (..)
   )

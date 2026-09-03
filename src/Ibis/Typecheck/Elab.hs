@@ -1,10 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
-{- |
-  Module      : Ibis.Typecheck.Elab
-  Description : Elaborates surface syntax into core syntax and desugars syntactic sugar.
--}
+-- | Elaboration pass for the typechecker, transforming surface syntax into core syntax.
 module Ibis.Typecheck.Elab
   ( elabTerm
   , elabDecl
@@ -13,16 +10,17 @@ module Ibis.Typecheck.Elab
 where
 
 import Control.Monad.Except (throwError)
+import Control.Monad.State (get, put)
 import Data.List (elemIndex)
+import Data.Map qualified as M
 
 import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
 import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm, Index (..))
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
 
+import Ibis.Typecheck.ElabCtx
 import Ibis.Typecheck.Error (TcError (..))
-import Ibis.Typecheck.MVar
-import Ibis.Typecheck.Types
 
 -------------------------------------------------------------
 -- ELABORATION PASS
@@ -35,6 +33,16 @@ extractPatternVars PWildcard = []
 extractPatternVars (PTuple pats) = concatMap extractPatternVars pats
 extractPatternVars (PCtor _ pats) = concatMap extractPatternVars pats
 extractPatternVars (PPartition _ pat) = extractPatternVars pat
+
+getOrAssignUniverse :: String -> ElabM Int
+getOrAssignUniverse name = do
+  ctx <- get
+  case M.lookup name (universeMap ctx) of
+    Just level -> pure level
+    Nothing -> do
+      let newLevel = length (universeMap ctx)
+      put ctx{universeMap = M.insert name newLevel (universeMap ctx)}
+      pure newLevel
 
 -- Desugar for expressions to an application of a monadic map function
 -- For example, `for x in collection do body` is desugared to `mapM (\x -> body) collection`

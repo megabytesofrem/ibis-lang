@@ -1,13 +1,9 @@
-{- |
-  Module      : Ibis.Typecheck.Eval
-  Description : Normalization by Evaluation (NbE) for the Ibis language
--}
+-- | Normalization by Evaluation for the typechecker
 module Ibis.Typecheck.Eval where
 
 import Control.Monad (zipWithM)
-import Data.Char (isDigit)
-import Ibis.Syntax.AST (Pat (..))
 import Ibis.Syntax.AST.Core
+import Ibis.Syntax.AST.Surface (Pat (..))
 
 type Env = [Value]
 
@@ -42,7 +38,7 @@ eval :: Env -> CoreTerm -> Value
 eval env term = case term of
   Universe n -> VUniverse n
   Const name -> VConst name
-  MVar name -> VFlex (metaIdFromName name) []
+  MVar i -> VFlex i []
   Var n -> case lookupEnv (unIndex n) env of
     Just v -> v
     Nothing -> error $ "Unbound variable at index: " ++ show n
@@ -254,9 +250,3 @@ quoteNeutralInt depth ty neu = case neu of
       (quoteInt depth v)
       (quoteInt depth proof)
       (quoteNeutralInt depth (VSect a u) neu)
-
-metaIdFromName :: String -> Int
-metaIdFromName name =
-  case reads (dropWhile (not . isDigit) name) of
-    [(metaId, "")] -> metaId
-    _ -> error $ "Invalid metavariable name: " ++ name

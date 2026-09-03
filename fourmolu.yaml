@@ -21,4 +21,4 @@ sort-derived-classes: false
 sort-deriving-clauses: false
 trailing-section-operators: true
 haddock-style: single-line
-haddock-style-module: multi-line
+haddock-style-module: single-line

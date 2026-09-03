@@ -45,14 +45,6 @@ pNamedUniverse = do
   name <- pIdent
   pure $ UnivName name
 
-pHole :: Parser Term
-pHole = do
-  _ <- symbol "_"
-  name <- pIdent
-
-  -- Typed holes are metavariables that can be solved during elaboration
-  pure $ MVar name
-
 pUniverse :: Parser Term
 pUniverse = do
   _ <- symbol "Type"
@@ -121,7 +113,6 @@ pAtom =
   choice
     [ pUniverse
     , pPropUniverse
-    , pHole
     , pSite
     , pList
     , parens pParenTerm

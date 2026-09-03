@@ -8,10 +8,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 
-{- |
-  Module      : Ibis.Category.Kernel
-  Description : Core categorical kernel structures for Ibis' type system
--}
 module Ibis.Category.Kernel
   ( -- * Categories and Functors
     Arrow (..)

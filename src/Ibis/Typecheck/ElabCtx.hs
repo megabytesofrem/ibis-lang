@@ -1,44 +1,16 @@
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
-{- |
-  Module      : Ibis.Typecheck.Types
-  Description : Types used in the typechecking phase, including elaboration.
--}
-module Ibis.Typecheck.Types
-  ( -- * Scope helpers
-    LocalScope
-  , ArityEnv
-
-    -- * Context and state
-  , ElabCtx (..)
-  , ElabState (..)
-  , Level (..)
-  , Spine
-  , MetaVar (..)
-  , MetaVarMap
-  , emptyElabCtx
-  , emptyElabState
-
-    -- * Elaboration monad
-  , ElabM (..)
-  , runElaboration
-
-    -- * Context operations
-  , lookupName
-  , extendCtx
-  )
-where
+-- | Context and state for the elaboration pass of the typechecker.
+module Ibis.Typecheck.ElabCtx where
 
 import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, local, runReaderT)
 import Control.Monad.State (MonadState, StateT, runStateT)
-import Data.IntMap.Strict qualified as IM
 import Data.List (elemIndex)
-import Data.Map.Strict qualified as M
+import Data.Map qualified as M
 
-import Ibis.Syntax.AST.Core (CoreTerm, Index (..), Level (..), Spine, Value)
+import Ibis.Syntax.AST.Core (Index (Index), Level (Level))
 import Ibis.Typecheck.Error (TcError (..))
 
 -------------------------------------------------------------
@@ -62,7 +34,6 @@ data ElabCtx = ElabCtx
 
 data ElabState = ElabState
   { universeMap :: M.Map String Int -- Mapping from universe names to their levels
-  , metavars :: IM.IntMap MetaVar -- Metavariable substitution map
   , nextLevel :: Int -- Next available universe level for named universes
   , nextMetaVarId :: Int -- Next available metavariable ID
   }
@@ -75,20 +46,9 @@ emptyElabState :: ElabState
 emptyElabState =
   ElabState
     { universeMap = M.empty
-    , metavars = IM.empty
     , nextLevel = 1 -- Universe 0 is reserved for Prop
     , nextMetaVarId = 0
     }
-
--- | A metavariable is either an unsolved hole (carrying the local scope it was
--- created in and its expected type) or a solved term.
-data MetaVar
-  = Hole LocalScope CoreTerm
-  | Solved CoreTerm
-  deriving (Show, Eq)
-
--- | The global metavariable substitution map.
-type MetaVarMap = IM.IntMap MetaVar
 
 -------------------------------------------------------------
 -- ELABORATION MONAD

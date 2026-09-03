@@ -1,7 +1,4 @@
-{- |
-  Module      : Ibis.Syntax.AST.Surface
-  Description : Surface syntax AST for the Ibis language
--}
+-- | Surface syntax AST for Ibis
 module Ibis.Syntax.AST.Surface
   ( Literal (..)
   , SurfaceUniverse (..)
@@ -19,8 +16,6 @@ module Ibis.Syntax.AST.Surface
   )
 where
 
--- import Data.List (intersperse)
--- import Ibis.Prettyprint
 import Ibis.Syntax.AST.Operator (Binop, Unop)
 
 -------------------------------------------------------------
@@ -44,7 +39,7 @@ data Term
     Universe SurfaceUniverse
   | -- Constants and variables
     Const String -- Constants (e.g., built-in functions, axioms)
-  | MVar String -- Meta-variable for unification
+  | MVar Int -- Meta-variable for unification
   | Var String
   | Lit Literal
   | Unit

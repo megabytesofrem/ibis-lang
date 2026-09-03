@@ -47,6 +47,8 @@ library
   import: warnings
   -- Modules exported by the library.
   exposed-modules:
+    -- Ibis.Typecheck.MVar
+    -- Ibis.Typecheck.Types
     Ibis.Category.Kernel
     Ibis.Prettyprint
     Ibis.Syntax.AST
@@ -61,10 +63,12 @@ library
     Ibis.Tactics.Prover
     Ibis.Typecheck.Check
     Ibis.Typecheck.Elab
+    Ibis.Typecheck.ElabCtx
     Ibis.Typecheck.Error
     Ibis.Typecheck.Eval
-    Ibis.Typecheck.MVar
-    Ibis.Typecheck.Types
+    Ibis.Typecheck.Unify.HasFMV
+    Ibis.Typecheck.Unify.Solver
+    Ibis.Typecheck.Unify.Types
 
   ----
   -- Modules included in this library but not exported.

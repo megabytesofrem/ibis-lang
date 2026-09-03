@@ -1,10 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-{- |
-  Module      : Ibis.Syntax.AST.Core
-  Description : Core syntax of the Ibis language
--}
+-- | Core syntax AST for Ibis
 module Ibis.Syntax.AST.Core
   ( -- * Debruijn indices
     Index (..)
@@ -45,7 +42,7 @@ type Closure = (Value -> Value)
 data CoreTerm
   = Universe Int
   | Const String -- Constants (e.g., built-in functions, axioms)
-  | MVar String -- Meta-variable for unification
+  | MVar Int -- Meta-variable for unification
   | Var Index -- De Bruijn indexded variable
   | Lit Literal
   | Unit
