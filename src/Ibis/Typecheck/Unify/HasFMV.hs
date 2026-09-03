@@ -10,7 +10,7 @@ class HasFMV a where
 instance HasFMV CoreTerm where
   fmv (Core.Universe _) = []
   fmv (Core.Const _) = []
-  fmv (Core.MVar m) = [MetaVar (read m)]
+  fmv (Core.MVar m) = [MetaVar m]
   fmv (Core.Var _) = []
   fmv (Core.Lit _) = []
   fmv (Core.Unit) = []

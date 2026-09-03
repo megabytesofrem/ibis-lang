@@ -219,7 +219,7 @@ quoteInt depth val = case val of
   VSect a u -> Sect (quoteInt depth a) (quoteInt depth u)
   VNeutral ty neu -> quoteNeutralInt depth ty neu
   VRigid lvl spine -> foldl App (Var (Index (depth - unLevel lvl - 1))) (map (quoteInt depth) spine)
-  VFlex m spine -> foldl App (MVar ("m" ++ show m)) (map (quoteInt depth) spine)
+  VFlex m spine -> foldl App (MVar m) (map (quoteInt depth) spine)
   _ -> error "Read back for this value is not implemented yet"
 
 -- Convert a neutral term back into a CoreTerm, given its type and the current De Bruijn depth

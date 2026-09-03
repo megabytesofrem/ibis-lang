@@ -1,5 +1,6 @@
-{-# LANGUAGE DerivingStrategies #-}
+{- FOURMOLU_DISABLE -}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module Ibis.Typecheck.Unify.Types where
 
@@ -27,18 +28,16 @@ data Problem = Problem
   }
   deriving (Show, Eq)
 
-data Elim
-  = Apply CoreTerm
-  | ProjFst
-  | ProjSnd
-  deriving (Show, Eq)
-
+{- FOURMOLU_DISABLE -}
+-- An occurence strategy for a metavariable within a term
 data Occurrence
-  = OccurStrongRigid
-  | OccurFlexRigid
-  | OccurNotOccur
+  = OccurStrongRigid -- The meta variable occurs in a rigid position (e.g., applied to a constructor)
+  | OccurFlexRigid   -- The meta variable occurs in a flexible position (e.g., applied to a variable)
+  | OccurNotOccur    -- The meta variable does not occur in the term
   deriving (Show, Eq)
+{- FOURMOLU_ENABLE -}
 
+-- The type of terms we are working with in the unification solver
 type Type = CoreTerm
 
 newtype MetaVar = MetaVar {unMetaVar :: Int}
@@ -49,8 +48,22 @@ data Entry
   | BDef String CoreTerm CoreTerm -- x : A = val
   | Meta MetaVar CoreTerm (Maybe CoreTerm) -- ?X : A (or ?X : A = solved_value)
   | Prob Int Problem -- Blocked equations waiting on unsolved meta-variables
+  deriving (Show, Eq)
 
+-- | Substitution mapping from metavariables to terms
+--
+-- Implementation note: The original paper "A tutorial implementation of dynamic pattern uniﬁcation"
+-- by Dale Miller and Gopalan Nadathur uses a list of pairs for substitutions, but we use a Map for efficiency.
 type Subst = M.Map MetaVar CoreTerm
 
--- Our local context is a snoc-list of entries
-type LocalCtx = [Entry]
+-- | The state of the unification solver, including the current scope stack, meta-variable substitution map,
+-- and the worklist of problems to solve.
+--
+-- Implementation note: The original paper "A tutorial implementation of dynamic pattern uniﬁcation"
+-- by Dale Miller and Gopalan Nadathur uses a list of problems for the worklist, but we use a record instead.
+data SolverState = SolverState
+  { scopeStack :: [Entry]
+  , metaSubst :: M.Map MetaVar CoreTerm
+  , worklist :: M.Map Int Problem
+  }
+  deriving (Show, Eq)
