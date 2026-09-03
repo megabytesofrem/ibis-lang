@@ -60,6 +60,36 @@ stashSimplified _probId simplifiedProblem newProblems = do
 -- Context manipulation functions
 -------------------------------------------------
 
+modifyContext :: (Zip -> (a, Zip)) -> Reduce a
+modifyContext f = do
+  st <- get
+  let (res, ctx') = f (context st)
+  put st{context = ctx'}
+  pure res
+
+pushL :: Entry -> Reduce ()
+pushL e = modify $ \st ->
+  let ctx = context st
+   in st{context = ctx{leftScope = e : leftScope ctx}}
+
+pushR :: Entry -> Reduce ()
+pushR e = modify $ \st ->
+  let ctx = context st
+   in st{context = ctx{rightScope = e : rightScope ctx}}
+
+popL :: Reduce (Maybe Entry)
+popL = modifyContext $ \ctx -> case ctx of
+  Zip (e : lefts) focus' rights -> (Just e, Zip lefts focus' rights)
+  Zip [] focus' rights -> (Nothing, Zip [] focus' rights)
+
+setFocus :: Maybe Entry -> Zip -> Zip
+setFocus f z = z{focus = f}
+
+popR :: Zip -> (Maybe Entry, Zip)
+popR z = case rightScope z of
+  [] -> (Nothing, z)
+  (e : es) -> (Just e, z{rightScope = es})
+
 defineMeta :: MetaVar -> Type -> CoreTerm -> Reduce ()
 defineMeta targetMeta ty solvedVal = do
   st <- get
@@ -77,10 +107,18 @@ lookupMeta targetM = do
 applySubst :: Subst -> SolverState -> SolverState
 applySubst subst st =
   st
-    { scopeStack = map updateEnv (scopeStack st)
+    { context = updateContext (context st)
     , worklist = M.map updateProblem (worklist st)
     }
  where
+  updateContext :: Zip -> Zip
+  updateContext z =
+    Zip
+      { leftScope = map updateEnv (leftScope z)
+      , focus = fmap updateEnv (focus z)
+      , rightScope = map updateEnv (rightScope z)
+      }
+
   updateEnv :: Entry -> Entry
   updateEnv entry = case entry of
     BVar name ty -> BVar name (substTerm subst ty)
@@ -232,19 +270,30 @@ flexRigid p prob@(Problem targetMeta _ _rhs) = do
       lhs = eqLHS eq
       _tty = eqType eq
   case unwindApp lhs of
-    (Core.MVar m, es) -> do
+    (Core.MVar m, _es) -> do
       let meta = MetaVar m
       let targetMeta' = MetaVar targetMeta
 
-      st <- get
-      let (afterMeta, rest) = break (\case Meta mv _ _ -> mv == meta; _ -> False) (scopeStack st)
-      case rest of
-        (Meta _ ty _ : _) -> do
-          -- Scope check: does the target metavariable appear in the free variables of later bindings?
-          if targetMeta' `elem` (fmv afterMeta)
-            then stashBlocked p eq
-            else tryInvert p eq ty (stashBlocked p eq)
-        _ ->
-          -- Metavariable is either already solved (in metaBindings) or missing
+      -- Walk left context using popL until we focus the meta
+      popL >>= \case
+        Just e@(Meta mv ty _)
+          | mv == meta -> do
+              -- Scope check using elements remaining on left stack
+              st <- get
+              if targetMeta' `elem` fmv (leftScope (context st))
+                then do
+                  _ <- pushL e
+                  stashBlocked p eq
+                else tryInvert p eq ty (stashBlocked p eq)
+          | otherwise -> do
+              _ <- pushR e
+              flexRigid p prob
+        Just e -> do
+          _ <- pushR e
+          flexRigid p prob
+        Nothing ->
           stashBlocked p eq
     _ -> throwError $ Other "Unification failed: lhs is not a metavariable application."
+
+flexFlex :: Int -> Problem -> Reduce ()
+flexFlex p prob@(Problem targetMeta _ _rhs) = undefined

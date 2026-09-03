@@ -56,13 +56,20 @@ data Entry
 -- by Dale Miller and Gopalan Nadathur uses a list of pairs for substitutions, but we use a Map for efficiency.
 type Subst = M.Map MetaVar CoreTerm
 
+data Zip = Zip
+  { leftScope :: [Entry] -- Entries to the left of the focus (newer/local)
+  , focus :: Maybe Entry -- Currently focused entry (the cursor)
+  , rightScope :: [Entry] -- Entries to the right of the focus (older/global)
+  }
+  deriving (Show, Eq)
+
 -- | The state of the unification solver, including the current scope stack, meta-variable substitution map,
 -- and the worklist of problems to solve.
 --
 -- Implementation note: The original paper "A tutorial implementation of dynamic pattern uniﬁcation"
 -- by Dale Miller and Gopalan Nadathur uses a list of problems for the worklist, but we use a record instead.
 data SolverState = SolverState
-  { scopeStack :: [Entry]
+  { context :: Zip
   , metaSubst :: M.Map MetaVar CoreTerm
   , worklist :: M.Map Int Problem
   }
