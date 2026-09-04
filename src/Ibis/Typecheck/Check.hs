@@ -1,9 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-{- |
-  Module      : Ibis.Typecheck.Check
-  Description : Type checking and inference for Ibis' core language
--}
 module Ibis.Typecheck.Check where
 
 import Control.Monad.Except (MonadError, throwError)

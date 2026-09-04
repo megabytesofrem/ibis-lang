@@ -1,9 +1,10 @@
 module Ibis.Typecheck.Unify.HasFMV where
 
-import Ibis.Syntax.AST.Core (CoreTerm)
+import Ibis.Syntax.AST.Core (CoreTerm, Index)
 import qualified Ibis.Syntax.AST.Core as Core
 import Ibis.Typecheck.Unify.Types (Entry (..), Equation (..), MetaVar (..), Problem (..))
 
+-- | Class for types that have free metavariables within them
 class HasFMV a where
   fmv :: a -> [MetaVar]
 
@@ -40,3 +41,26 @@ instance HasFMV Equation where
 
 instance HasFMV Problem where
   fmv (Problem _ _ eq) = fmv eq
+
+-- | Extract the free variables from a @CoreTerm@, returning a list of @Index@ values
+-- representing the free variables.
+freeVars :: CoreTerm -> [Index]
+freeVars term = case term of
+  Core.Universe _ -> []
+  Core.Const _ -> []
+  Core.MVar _ -> []
+  Core.Var idx -> [idx]
+  Core.Lit _ -> []
+  Core.Unit -> []
+  Core.Pi _ ty body -> freeVars ty ++ freeVars body
+  Core.Lam _ body -> freeVars body
+  Core.App f x -> freeVars f ++ freeVars x
+  Core.Sigma _ ty body -> freeVars ty ++ freeVars body
+  Core.Pair a b -> freeVars a ++ freeVars b
+  Core.Fst p -> freeVars p
+  Core.Snd p -> freeVars p
+  Core.Let _ e body -> freeVars e ++ freeVars body
+  Core.Ann e ty -> freeVars e ++ freeVars ty
+  Core.Match scrut branches ->
+    freeVars scrut ++ concatMap (freeVars . snd) branches
+  _ -> []

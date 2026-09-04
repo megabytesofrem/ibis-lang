@@ -1,7 +1,8 @@
-{- FOURMOLU_DISABLE -}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 
+-- | Types and data structures for the unification solver, including metavariables, equations,
+-- and the solver state.
 module Ibis.Typecheck.Unify.Types where
 
 import Data.Map qualified as M
@@ -72,5 +73,7 @@ data SolverState = SolverState
   { context :: Zip
   , metaSubst :: M.Map MetaVar CoreTerm
   , worklist :: M.Map Int Problem
+  , nextMetaId :: Int
+  , nextProblemId :: Int
   }
   deriving (Show, Eq)

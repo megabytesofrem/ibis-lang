@@ -15,10 +15,10 @@ import Data.Map qualified as M
 
 import Control.Monad (when)
 import Data.Maybe (fromMaybe)
-import Ibis.Syntax.AST.Core (CoreTerm (..), Index)
+import Ibis.Syntax.AST.Core (CoreTerm (..), Index (Index))
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Typecheck.Error (TcError (..))
-import Ibis.Typecheck.Unify.HasFMV (HasFMV (..))
+import Ibis.Typecheck.Unify.HasFMV (HasFMV (..), freeVars)
 import Ibis.Typecheck.Unify.Types
 
 -- The reduction monad: unifies and solves meta-variables, threading the local context through
@@ -141,6 +141,20 @@ applySubst subst st =
     Core.MVar m -> fromMaybe t (M.lookup (MetaVar m) s)
     _ -> t
 
+freshMetaId :: Reduce Int
+freshMetaId = do
+  st <- get
+  let fresh = nextMetaId st
+  put st{nextMetaId = fresh + 1}
+  pure fresh
+
+freshProblemId :: Reduce Int
+freshProblemId = do
+  st <- get
+  let fresh = nextMetaId st
+  put st{nextMetaId = fresh + 1}
+  pure fresh
+
 -- Occurence checking and inversion functions
 ------------------------------------------------
 
@@ -169,8 +183,13 @@ occursIn targetMeta (Core.Snd p) = occursIn targetMeta p
 occursIn targetMeta (Core.Let _ e body) = occursIn targetMeta e || occursIn targetMeta body
 occursIn _ _ = False
 
+-- | Given a metavariable @targetMeta@, a type @tty@, a list of arguments @es@, and a right-hand side term @rhs@,
+-- invert attempts to find a value for the metavariable that satisfies the equation ?M es = rhs, if possible.
+--
+-- This may throw an error up the monad stack if the inversion is not possible, either
+-- due to the Miller pattern condition not being satisfied or due to an occurs check failure.
 invert :: MetaVar -> Type -> [CoreTerm] -> CoreTerm -> Reduce CoreTerm
-invert targetMeta tty es rhs = do
+invert targetMeta _tty es rhs = do
   -- Occurs check: does the meta variable occur in the right-hand side of the equation?
   let occ = occurence [targetMeta] rhs
   when (isStrongRigid occ) $
@@ -185,7 +204,12 @@ invert targetMeta tty es rhs = do
         Nothing -> throwError $ Other "Cannot invert: failed to rename scope."
     Nothing -> throwError $ Other "Cannot invert: spine is not a valid pattern."
 
--- Build a mapping from the spine of metavariable applications to local parameter indices
+-- Unwind an application term into its head and argument list
+unwindApp :: CoreTerm -> (CoreTerm, [CoreTerm])
+unwindApp (Core.App f arg) = let (g, args) = unwindApp f in (g, args ++ [arg])
+unwindApp t = (t, [])
+
+-- | Build a mapping from the spine of metavariable applications to local parameter indices
 --
 -- In a higher-order unification problem (?M x_0 x_1 .. x_n = rhs), the spine
 -- (x_0, x_1, ..., x_n) must satisfy the Miller pattern condition: each variable in the spine
@@ -207,7 +231,7 @@ buildSpineMap args = go args 0 []
     | otherwise = Nothing -- Variable repeated; fails pattern condition
   go _ _ _ = Nothing -- Complex term in spine; fails pattern condition
 
--- Invert the scope of the right hand side term according to the variable mapping
+-- | Invert the scope of the right hand side term according to the variable mapping
 --
 -- In practice, this function replaces outer-scope variables in the rhs with their
 -- corresponding local parameter indices based on the provided mapping @varMap@, constructed from
@@ -225,10 +249,6 @@ invertScope varMap term = case term of
   Core.Let name e body -> Core.Let name <$> invertScope varMap e <*> invertScope varMap body
   _ -> Just term -- For other terms, return as-is
 
-unwindApp :: CoreTerm -> (CoreTerm, [CoreTerm])
-unwindApp (Core.App f arg) = let (g, args) = unwindApp f in (g, args ++ [arg])
-unwindApp t = (t, [])
-
 tryInvert :: Int -> Equation -> Type -> Reduce () -> Reduce ()
 tryInvert p eq@(Equation _eqTy lhs rhs) tty cont = case unwind lhs of
   Just (alpha, es) -> do
@@ -243,6 +263,141 @@ tryInvert p eq@(Equation _eqTy lhs rhs) tty cont = case unwind lhs of
   unwind term = case unwindApp term of
     (Core.MVar m, args) -> Just (m, args)
     _ -> Nothing
+
+-- | Given two spines (lists of De Bruijn indices) @xs@ and @ys@ applied to the same
+-- metavariable (?M xs =? ?M ys), this function computes the intersection of the two spines.
+-- It keeps the common variable scope where both argument lists agree (x == y) and drops any
+-- parameters where they disagree.
+--
+-- How it works:
+--
+-- 1. Inductive Case:
+--    - Recursively steps down the Pi-types of the metavariable while walking both argument spines.
+--    - Assigns a fresh De Bruijn index for each parameter position.
+--    - Always logs the parameter into @phi@ (which tracks all original scope parameters).
+--    - Logs the parameter into @psi@ ONLY if the arguments at the current position match (x == y).
+--    - Substitutes the fresh index into the codomain and recurses on the remaining arguments.
+--
+-- 2. Base Case (when spines are fully traversed):
+--    - Verifies that the return type term @s@ does not depend on any variables that were dropped.
+--      (i.e., @s@ must only depend on the retained variables tracked in @psi@).
+--    - If @s@ depends on a dropped variable, returns 'Nothing' because scope pruning is impossible.
+--    - Otherwise, builds a pruned Pi-type accepting only the retained parameters in @psi@.
+--    - Constructs a lambda wrapper @mkSolution@ that takes a fresh, restricted metavariable hole,
+--      applies the retained @psi@ arguments to it, and wraps it in lambdas over all original @phi@
+--      parameters so it plugs cleanly back into the original call site.
+intersect
+  :: [(Index, Type)]
+  -- ^ @phi@: The original scope parameters (all parameters from the original Pi-type)
+  -> [(Index, Type)]
+  -- ^ @psi@: The retained scope parameters (only those where the spines agree)
+  -> Type
+  -- ^ The return type term @s@ of the Pi-type
+  -> [Index]
+  -- ^ The left-hand side spine (arguments applied to the metavariable)
+  -> [Index]
+  -- ^ The right-hand side spine (arguments applied to the metavariable)
+  -> Reduce (Maybe (Type, CoreTerm -> CoreTerm))
+  -- ^ Returns a pruned Pi-type and a solution constructor if intersection is successful, or 'Nothing' if not.
+intersect phi psi s [] [] = do
+  -- Find all free variables in the right-hand side term s
+  let fvs = freeVars s
+  -- Retain only those variables from psi that are in the free variables of s
+  let retained = map fst psi
+
+  -- Scope check: Does the right-hand side term s only depend on retained variables?
+  if all (`elem` retained) fvs
+    then do
+      -- Prune the Pi type by keeping only the variables that are in the free variables of s
+      let prunedPi = foldr (\(_, ty) acc -> Core.Pi (Just "x") ty acc) s psi
+
+      -- Construct the solution term for the metavariable as a lambda abstraction over the pruned variables
+      -- using only retained variables from psi, and applying them to the right-hand side term s.
+      let mkSolution beta =
+            let innerApp = foldl' Core.App beta (map (Core.Var . fst) psi)
+             in foldr (\(_, _ty) acc -> Core.Lam (Just "x") acc) innerApp phi -- ty is not used in the lambda
+      pure $ Just (prunedPi, mkSolution)
+    else pure Nothing
+
+-- Inductive case: If both spines are non-empty, we recursively step down the Pi type
+-- We check if the heads of the spines match, and if so, we recurse on the tails of the spines.
+intersect phi psi (Core.Pi name dom cod) (x : xs) (y : ys) = do
+  let freshIdx = Index (length phi)
+
+  -- let Ψ' = Ψ ++ if x == y then [(z, A)] else []
+
+  -- If the current indices x and y match, we add the fresh index and its type to psi; otherwise, we only add it to phi.
+  let psi' = if x == y then psi ++ [(freshIdx, dom)] else psi
+
+  -- We always add the fresh index and its type to phi, which tracks all original scope parameters.
+  let phi' = phi ++ [(freshIdx, dom)]
+
+  -- Recursively intersect the codomain with the updated contexts
+  let cod' = substIndex freshIdx (Core.Var x) cod
+  intersect phi' psi' cod' xs ys
+ where
+  substIndex :: Index -> CoreTerm -> CoreTerm -> CoreTerm
+  substIndex idx replacement term = undefined
+
+-- If the spine lengths do not match, we cannot intersect the contexts; return Nothing
+intersect _ _ _ _ _ = pure Nothing
+
+-- Try to intersect two spines
+--
+-- This function checks if both argument types @ds@ and @es@ are valid spines (i.e., they consist purely)
+-- of metavariable indices.
+--
+-- If they are valid spines, it attempts to intersect them using the @intersect@ function, calculating
+-- a pruned type for a fresh hole and solves the equation by defining the metavariable with a solution term constructed
+-- from the pruned Pi type and the right-hand side term.
+--
+-- If not (if either intersection fails, or the spines are not valid), it stashes the problem as blocked
+-- on the worklist for later processing.
+tryIntersect
+  :: Int
+  -- ^ Problem ID
+  -> Equation
+  -- ^ The active equation to solve
+  -> MetaVar
+  -- ^ The target metavariable α to solve for
+  -> Type
+  -- ^ The type of the metavariable α
+  -> [CoreTerm]
+  -- ^ The left-hand side spine (arguments applied to α)
+  -> [CoreTerm]
+  -- ^ The right-hand side spine (arguments applied to α)
+  -> Reduce ()
+tryIntersect p eq@(Equation _eqTy lhs rhs) targetMeta tty ds es = do
+  case (toVars ds, toVars es) of
+    (Just xs, Just ys) -> do
+      -- Attempt to intersect the two spines
+      res <- intersect [] [] tty xs ys
+      case res of
+        -- If intersection is successful, we get a pruned Pi type and a solution constructor
+        Just (prunedPi, mkSolution) -> do
+          -- Allocate a fresh ID for the restricted hole
+          betaId <- freshMetaId
+          let betaMeta = MetaVar betaId
+          pushL (Meta betaMeta prunedPi Nothing)
+
+          -- Define the meta-variable with the solution term constructed from the pruned Pi type and the right-hand side term
+          defineMeta targetMeta tty (mkSolution (Core.MVar betaId))
+
+          -- Stash the problem as solved
+          stashSolved p eq
+
+        -- If intersection fails, we stash the problem as blocked
+        Nothing -> stashBlocked p eq
+
+    -- If either spine contains non-variable terms, we cannot intersect; stash as blocked
+    _ -> stashBlocked p eq
+ where
+  toVars :: [CoreTerm] -> Maybe [Index]
+  toVars = mapM extractVar
+
+  extractVar :: CoreTerm -> Maybe Index
+  extractVar (Core.Var x) = Just x
+  extractVar _ = Nothing
 
 -- Handle rigid-rigid unification
 --
