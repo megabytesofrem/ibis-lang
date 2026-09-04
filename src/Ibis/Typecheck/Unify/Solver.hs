@@ -227,6 +227,7 @@ buildSpineMap args = go args 0 []
  where
   go [] _ acc = Just acc
   go (Core.Var x : xs) newIdx acc
+    -- If x is not already in the mapping, add it with the new index and recurse
     | x `notElem` map fst acc = go xs (newIdx + 1) ((x, newIdx) : acc)
     | otherwise = Nothing -- Variable repeated; fails pattern condition
   go _ _ _ = Nothing -- Complex term in spine; fails pattern condition

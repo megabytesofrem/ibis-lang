@@ -1,13 +1,46 @@
 \documentclass[11pt]{article}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{mathpartir}
+\mprset{flushleft}
 \usepackage{listingsutf8}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+
+% Tikz diagram styles
+\tikzstyle{startstop} = [rectangle,
+    rounded corners,
+    minimum width=3cm,
+    minimum height=1cm,
+    inner xsep=8pt,
+    inner ysep=6pt,
+    text centered,
+    draw=black,
+    fill=red!20]
+\tikzstyle{process} = [rectangle,
+    minimum width=3cm,
+    minimum height=1cm,
+    inner xsep=8pt,
+    inner ysep=6pt,
+    text centered,
+    draw=black,
+    fill=gray!30]
+\tikzstyle{decision} = [diamond,
+    minimum width=3cm,
+    minimum height=1cm,
+    text centered,
+    draw=black,
+    fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newtheorem{definition}{Definition}[section]
+\newcommand{\ctx}{\Gamma}
+\newcommand{\synths}[3]{#1 \vdash #2 \Rightarrow #3} % \synths{context}{term}{type}
+\newcommand{\checks}[3]{#1 \vdash #2 \Leftarrow #3}  % \checks{context}{term}{type}
+\newcommand{\defeq}{\coloneqq}
 
 % Custom style for code listings
 \lstdefinestyle{listing_style}{
@@ -68,15 +101,106 @@ Site declarations inherently map to a cubical type, where the covers are the fac
 
 \begin{lstlisting}[language=Ibis, caption={Example of a site declaration in Ibis}]
 site MySite where
-  covers: [~a, ~b]
-  paths:
-    from_a_to_b: ~a -> ~b
+  cover @J has [@K, @L]
+
+-- Paths are automatically generated from site covers
 
 -- (/$\sigma$/) is the implicit site parameter
 def alloc_in {(/$\sigma$/) : MySite} (x: Int) : Ptr Int {(/$\sigma$/)} := ...
 \end{lstlisting}
 
 \pagebreak
+
+\section{Core: The Core Language}
+The core language is Ibis is a dependently typed lambda calculus with extensions for sites, covers and sheaves. Surface is desugared to Core by the
+elaborator pass, and type-checking, inference, and unification (Miller's Higher Order Pattern Unification) are performed on Core.
+\vspace{0.6em}
+
+\begin{center}
+    % Diagram of the process
+    \begin{tikzpicture}[node distance=2.8cm]
+        \node (surface) [startstop] {Surface Language};
+        \node (elaborator) [process, below of=surface] {Elaborator};
+        \node (core) [startstop, below of=elaborator] {Core Language};
+        \node (monomorphized_core) [process, below of=core] {Monomorphized Core};
+        \node (output) [startstop, below of=monomorphized_core] {Output};
+
+        \node[anchor=west, xshift=3mm, text width=0.42\linewidth, align=left] at (surface.east)
+        {High-level surface language as input (Ibis source code)};
+        \node[anchor=west, xshift=3mm, text width=0.42\linewidth, align=left] at (elaborator.east)
+        {Elaborator desugars and lowers everything to Core};
+        \node[anchor=west, xshift=3mm, text width=0.42\linewidth, align=left] at (core.east)
+        {Core is a dependently typed LC with extensions for sites, covers and sheaves};
+        \node[anchor=west, xshift=3mm, text width=0.6\linewidth, align=left] at (monomorphized_core.east)
+        {Monomorphized Core is the same as Core, but with all polymorphic functions instantiated to their concrete types
+            and defunctionalization performed};
+        \node[anchor=west, xshift=3mm, text width=0.42\linewidth, align=left] at (output.east)
+        {Finalized output from the monomorphized core, ready for code generation};
+
+        \draw [arrow] (surface) -- (elaborator);
+        \draw [arrow] (elaborator) -- (core);
+        \draw [arrow] (core) -- (monomorphized_core);
+        \draw [arrow] (monomorphized_core) -- (output);
+    \end{tikzpicture}
+\end{center}
+
+\pagebreak
+
+\section{The MLTT based type system}
+The type system of Ibis is based on Martin-Löf Type Theory (MLTT), which provides a foundation for dependently typed programming languages.
+In Martin-Löf Type Theory, there is no separation between types and terms -- types are terms, and terms are types.
+
+We introduce a bidirectional type system, which consists of two judgments: synthesis ($\synths{\ctx}{e}{A}$) and checking ($\checks{\ctx}{e}{A}$).
+Type synthesis is the process of inferring the type of a term, while type checking is the process of verifying that a
+term has a specific type.
+
+Martin-Löf Type Theory is a predicative type system rather than impredicative, and organizes types into a hierarchy of universes $\mathcal{U}_0, \mathcal{U}_1, \mathcal{U}_2, \ldots$, where $\mathcal{U}_i : \mathcal{U}_{i+1}$.
+This prevents Girard's paradox, which arises from systems that allow a type to be a member of itself (i.e., $\mathcal{U} : \mathcal{U}$), leading to a recursive loop in
+the type checker. Ibis is based on a predicative type system with one exception - Prop; the type of propositions is impredicative, meaning that
+universal logical quantification over propositions is now well-formed ($\forall x.P(x)$) without bumping universe levels.
+
+\begin{mathpar}
+    \inferrule[\textsc{Var}]
+    {x : A \in \ctx}
+    {\synths{\ctx}{x}{A}}
+
+    \inferrule[\textsc{$\Pi$-Form}]
+    {\checks{\ctx}{A}{\mathcal{U}} \quad \checks{\ctx, x : A}{B}{\mathcal{U}}}
+    {\synths{\ctx}{\Pi(x : A).B}{\mathcal{U}}}
+
+    \inferrule[\textsc{$\Sigma$-Form}]
+    {\checks{\ctx}{A}{\mathcal{U}} \quad \checks{\ctx, x : A}{B}{\mathcal{U}}}
+    {\synths{\ctx}{\Sigma(x : A).B}{\mathcal{U}}}
+
+    \inferrule[\textsc{App}]
+    {\checks{\ctx}{f}{\Pi(x : A).B} \quad \checks{\ctx}{x}{A}}
+    {\synths{\ctx}{f\,x}{B}}
+
+    \inferrule[\textsc{Fst}]
+    {\checks{\ctx}{p}{\Sigma(x : A).B}}
+    {\synths{\ctx}{\mathrm{fst}(p)}{A}}
+
+    \inferrule[\textsc{Snd}]
+    {\checks{\ctx}{p}{\Sigma(x : A).B}}
+    {\synths{\ctx}{\mathrm{snd}(p)}{B[\mathrm{fst}(p)/x]}}
+\end{mathpar}
+
+These correspond to the following minimally written Haskell implementation rules:
+Do note that for brevity, functions have been substituted with their mathematical symbols. A and B represent the
+domain and co-domain of the function respectively, and $\mathcal{U}$ represents the universe level of types.
+
+\begin{itemize}
+    \item \textbf{Var Index}: \texttt{synth $\ctx$ (Var ix)} looks up the type in $\ctx$ at index \texttt{ix}.
+    \item \textbf{$\Pi$-Form}: \texttt{synth $\ctx$ ($\Pi$ name A B)} checks \texttt{A} against $\mathcal{U}$,
+          extends $\ctx$ with \texttt{A} evaluated to a Value, and checks \texttt{B} against $\mathcal{U}$.
+    \item \textbf{$\Sigma$-Form}: \texttt{synth $\ctx$ ($\Sigma$ name A B)} mirrors the rules of the $\Pi$-Form, to synth
+          universe formation for dependent pair types, checking \texttt{A} and \texttt{B} against $\mathcal{U}$.
+    \item \textbf{App}: \texttt{synth $\ctx$ (App rator rand)} synths type of \texttt{rator}, verifies it is a $\Pi$ value type, checks
+          \texttt{rand} against \texttt{A}, and applies the closure to \texttt{eval rand}.
+    \item \textbf{Fst}: \texttt{synth $\ctx$ (Fst p)} synths type of \texttt{p}, verifies it is a $\Sigma$ value type, and returns \texttt{A}.
+    \item \textbf{Snd}: \texttt{synth $\ctx$ (Snd p)} synths type of \texttt{p}, verifies it is a $\Sigma$ value type, and applies the closure at
+          \texttt{eval (Fst p)} to return \texttt{B}.
+\end{itemize}
 
 \section{Category Theory}
 
@@ -183,5 +307,29 @@ To calculate the inverse image $f^*(Q)$ of a sheaf/presheaf $Q \in \mathcal{F}$:
     \item \textbf{Second Plus Construction Pass ($f^* Q = ((f_p^* Q)^+)^+$):}
           Re-apply the plus construction pass to enforce unique local existence and unicity of glued sections, yielding a true sheaf $f^* Q \in \mathcal{E}$.
 \end{enumerate}
+
+\section{Glossary}
+
+\subsection{Typing Judgments}
+\begin{mathpar}
+    \inferrule[\textsc{Synthesis}]
+    {\synths{\ctx}{e}{A}}
+    {\ctx \vdash e : A}
+
+    \inferrule[\textsc{Checking}]
+    {\checks{\ctx}{e}{A}}
+    {\ctx \vdash e : A}
+\end{mathpar}
+
+Do note that this is to be read as "the top implies the bottom" -- the top is the premise and the bottom is the conclusion.
+We define the premise as a judgment that must be satisfied in order for the conclusion to hold.
+
+\begin{itemize}
+    \item \textbf{Synthesis}: The synthesis judgment $\synths{\ctx}{e}{A}$ states that in context $\ctx$, the term $e$ synthesizes (infers) the type $A$.
+    \item \textbf{Checking}: The checking judgment $\checks{\ctx}{e}{A}$ states that in context $\ctx$, the term $e$ checks against the type $A$.
+    \item \textbf{Category}: A category $\mathcal{C}$ consists of a collection of objects, a collection of morphisms (arrows) between these objects, and two operations:
+          composition $(f \circ g)$ and identity $\text{id}_X$, satisfying the associativity and identity laws.
+    \item \textbf{Site}: A site is a category $\mathcal{C}$ equipped with a Grothendieck topology $J$, which specifies how to cover objects in $\mathcal{C}$ with families of morphisms. Sites provide the foundation for defining sheaves and presheaves, allowing us to reason about local data and its global behavior.
+\end{itemize}
 
 \end{document}

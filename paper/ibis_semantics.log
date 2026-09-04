@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025/nixos.org) (preloaded format=pdflatex 1980.1.1)  30 AUG 2026 11:03
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025/nixos.org) (preloaded format=pdflatex 1980.1.1)  4 SEP 2026 18:35
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -270,93 +270,298 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/frontendlayer/tikz.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/basiclayer/pgf.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/utilities/pgfrcs.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfutil-common.tex
+\pgfutil@everybye=\toks32
+\pgfutil@tempdima=\dimen166
+\pgfutil@tempdimb=\dimen167
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfutil-latex.def
+\pgfutil@abb=\box60
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfrcs.code.tex (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/pgf.revision.tex)
+Package: pgfrcs 2025-08-29 v3.1.11a (3.1.11a)
+))
+Package: pgf 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/basiclayer/pgfcore.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
-\c@definition=\count315
+Package graphics Info: Driver file: pdftex.def on input line 106.
+)
+\Gin@req@height=\dimen168
+\Gin@req@width=\dimen169
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/systemlayer/pgfsys.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgfsys.code.tex
+Package: pgfsys 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfkeys.code.tex
+\pgfkeys@pathtoks=\toks33
+\pgfkeys@temptoks=\toks34
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered.code.tex
+\pgfkeys@tmptoks=\toks35
+))
+\pgf@x=\dimen170
+\pgf@y=\dimen171
+\pgf@xa=\dimen172
+\pgf@ya=\dimen173
+\pgf@xb=\dimen174
+\pgf@yb=\dimen175
+\pgf@xc=\dimen176
+\pgf@yc=\dimen177
+\pgf@xd=\dimen178
+\pgf@yd=\dimen179
+\w@pgf@writea=\write3
+\r@pgf@reada=\read2
+\c@pgf@counta=\count315
+\c@pgf@countb=\count316
+\c@pgf@countc=\count317
+\c@pgf@countd=\count318
+\t@pgf@toka=\toks36
+\t@pgf@tokb=\toks37
+\t@pgf@tokc=\toks38
+\pgf@sys@id@count=\count319
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgf.cfg
+File: pgf.cfg 2025-08-29 v3.1.11a (3.1.11a)
+)
+Driver file for pgf: pgfsys-pdftex.def
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+File: pgfsys-pdftex.def 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgfsys-common-pdf.def
+File: pgfsys-common-pdf.def 2025-08-29 v3.1.11a (3.1.11a)
+))) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.tex
+File: pgfsyssoftpath.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfsyssoftpath@smallbuffer@items=\count320
+\pgfsyssoftpath@bigbuffer@items=\count321
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.tex
+File: pgfsysprotocol.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcore.code.tex
+Package: pgfcore 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmath.code.tex (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathutil.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathparser.code.tex
+\pgfmath@dimen=\dimen180
+\pgfmath@count=\count322
+\pgfmath@box=\box61
+\pgfmath@toks=\toks39
+\pgfmath@stack@operand=\toks40
+\pgfmath@stack@operation=\toks41
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.basic.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.trigonometric.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.random.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.comparison.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.base.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.round.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.misc.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfunctions.integerarithmetics.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathcalc.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmathfloat.code.tex
+\c@pgfmathroundto@lastzeros=\count323
+)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfint.code.tex) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorepoints.code.tex
+File: pgfcorepoints.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@picminx=\dimen181
+\pgf@picmaxx=\dimen182
+\pgf@picminy=\dimen183
+\pgf@picmaxy=\dimen184
+\pgf@pathminx=\dimen185
+\pgf@pathmaxx=\dimen186
+\pgf@pathminy=\dimen187
+\pgf@pathmaxy=\dimen188
+\pgf@xx=\dimen189
+\pgf@xy=\dimen190
+\pgf@yx=\dimen191
+\pgf@yy=\dimen192
+\pgf@zx=\dimen193
+\pgf@zy=\dimen194
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.code.tex
+File: pgfcorepathconstruct.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@path@lastx=\dimen195
+\pgf@path@lasty=\dimen196
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorepathusage.code.tex
+File: pgfcorepathusage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@shorten@end@additional=\dimen197
+\pgf@shorten@start@additional=\dimen198
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorescopes.code.tex
+File: pgfcorescopes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfpic=\box62
+\pgf@hbox=\box63
+\pgf@layerbox@main=\box64
+\pgf@picture@serial@count=\count324
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.code.tex
+File: pgfcoregraphicstate.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgflinewidth=\dimen199
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoretransformations.code.tex
+File: pgfcoretransformations.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@pt@x=\dimen256
+\pgf@pt@y=\dimen257
+\pgf@pt@temp=\dimen258
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+File: pgfcorequick.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoreobjects.code.tex
+File: pgfcoreobjects.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorepathprocessing.code.tex
+File: pgfcorepathprocessing.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorearrows.code.tex
+File: pgfcorearrows.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfarrowsep=\dimen259
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+File: pgfcoreshade.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@max=\dimen260
+\pgf@sys@shading@range@num=\count325
+\pgf@shadingcount=\count326
+)
+(/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+File: pgfcoreimage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.tex
+File: pgfcoreexternal.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfexternal@startupbox=\box65
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorelayers.code.tex
+File: pgfcorelayers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcoretransparency.code.tex
+File: pgfcoretransparency.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorepatterns.code.tex
+File: pgfcorepatterns.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex
+File: pgfcorerdf.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+))) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+File: pgfmoduleshapes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfnodeparttextbox=\box66
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+File: pgfmoduleplot.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/compatibility/pgfcomp-version-0-65.sty
+Package: pgfcomp-version-0-65 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@nodesepstart=\dimen261
+\pgf@nodesepend=\dimen262
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/compatibility/pgfcomp-version-1-18.sty
+Package: pgfcomp-version-1-18 2025-08-29 v3.1.11a (3.1.11a)
+)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/utilities/pgffor.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/utilities/pgfkeys.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgfkeys.code.tex)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/pgf/math/pgfmath.sty (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/math/pgfmath.code.tex)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/utilities/pgffor.code.tex
+Package: pgffor 2025-08-29 v3.1.11a (3.1.11a)
+\pgffor@iter=\dimen263
+\pgffor@skip=\dimen264
+\pgffor@stack=\toks42
+\pgffor@toks=\toks43
+)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+Package: tikz 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/libraries/pgflibraryplothandlers.code.tex
+File: pgflibraryplothandlers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@plot@mark@count=\count327
+\pgfplotmarksize=\dimen265
+)
+\tikz@lastx=\dimen266
+\tikz@lasty=\dimen267
+\tikz@lastxsaved=\dimen268
+\tikz@lastysaved=\dimen269
+\tikz@lastmovetox=\dimen270
+\tikz@lastmovetoy=\dimen271
+\tikzleveldistance=\dimen272
+\tikzsiblingdistance=\dimen273
+\tikz@figbox=\box67
+\tikz@figbox@bg=\box68
+\tikz@tempbox=\box69
+\tikz@tempbox@bg=\box70
+\tikztreelevel=\count328
+\tikznumberofchildren=\count329
+\tikznumberofcurrentchild=\count330
+\tikz@fig@count=\count331
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+File: pgfmodulematrix.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfmatrixcurrentrow=\count332
+\pgfmatrixcurrentcolumn=\count333
+\pgf@matrix@numberofcolumns=\count334
+)
+\tikz@expandcount=\count335
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibrarytopaths.code.tex
+File: tikzlibrarytopaths.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+))) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibraryshapes.geometric.code.tex
+File: tikzlibraryshapes.geometric.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/libraries/shapes/pgflibraryshapes.geometric.code.tex
+File: pgflibraryshapes.geometric.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibraryarrows.code.tex
+File: tikzlibraryarrows.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/generic/pgf/libraries/pgflibraryarrows.code.tex
+File: pgflibraryarrows.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\arrowsize=\dimen274
+))
+\c@definition=\count336
  (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count316
+\l__color_backend_stack_int=\count337
 ) (./ibis_semantics.aux)
 \openout1 = `ibis_semantics.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-\c@lstlisting=\count317
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+\c@lstlisting=\count338
  (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/base/inputenc.sty
 Package: inputenc 2024/02/08 v1.3d Input encoding file
-\inpenc@prehook=\toks32
-\inpenc@posthook=\toks33
+\inpenc@prehook=\toks44
+\inpenc@posthook=\toks45
 )
-Package hyperref Info: Link coloring OFF on input line 48.
+Package hyperref Info: Link coloring OFF on input line 81.
  (./ibis_semantics.out) (./ibis_semantics.out)
-\@outlinefile=\write3
-\openout3 = `ibis_semantics.out'.
+\@outlinefile=\write4
+\openout4 = `ibis_semantics.out'.
 
  (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count318
-\scratchdimen=\dimen166
-\scratchbox=\box60
-\nofMPsegments=\count319
-\nofMParguments=\count320
-\everyMPshowfont=\toks34
-\MPscratchCnt=\count321
-\MPscratchDim=\dimen167
-\MPnumerator=\count322
-\makeMPintoPDFobject=\count323
-\everyMPtoPDFconversion=\toks35
-)
-LaTeX Font Info:    Trying to load font information for U+msa on input line 50.
+\scratchcounter=\count339
+\scratchdimen=\dimen275
+\scratchbox=\box71
+\nofMPsegments=\count340
+\nofMParguments=\count341
+\everyMPshowfont=\toks46
+\MPscratchCnt=\count342
+\MPscratchDim=\dimen276
+\MPnumerator=\count343
+\makeMPintoPDFobject=\count344
+\everyMPtoPDFconversion=\toks47
+) (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
+ (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
+))
+LaTeX Font Info:    Trying to load font information for U+msa on input line 83.
  (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 50.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 83.
  (/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (./ibis_semantics.toc)
-\tf@toc=\write4
-\openout4 = `ibis_semantics.toc'.
+\tf@toc=\write5
+\openout5 = `ibis_semantics.toc'.
 
  [1
 
-{/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on input line 69.
- [2] [3] [4] [5{/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [6] (./ibis_semantics.aux)
+{/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2]
+Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on input line 102.
+ [3] [4] [5{/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [6] [7] [8] [9] [10] (./ibis_semantics.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `ibis_semantics.out' has not changed.
-(rerunfilecheck)             Checksum: D667D57A90261BCE60CFD46142134358;1411.
+(rerunfilecheck)             Checksum: E6106EA5041F520FE0C412222CFE9A40;1990.
  ) 
 Here is how much of TeX's memory you used:
- 11814 strings out of 467533
- 182007 string characters out of 5392394
- 618920 words of memory out of 5000000
- 40555 multiletter control sequences out of 15000+600000
- 639967 words of font info for 86 fonts, out of 8000000 for 9000
+ 23299 strings out of 467533
+ 445511 string characters out of 5392394
+ 841488 words of memory out of 5000000
+ 51796 multiletter control sequences out of 15000+600000
+ 641322 words of font info for 92 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,14n,79p,586b,1213s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr12.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr17.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmti10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmtt9.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/cm-super/sfrm1095.pfb>
-Output written on ibis_semantics.pdf (6 pages, 219979 bytes).
+ 102i,14n,107p,586b,1213s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr12.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr17.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmr8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmti10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/amsfonts/cm/cmtt9.pfb></nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/type1/public/cm-super/sfrm1095.pfb>
+Output written on ibis_semantics.pdf (10 pages, 261670 bytes).
 PDF statistics:
- 196 PDF objects out of 1000 (max. 8388607)
- 152 compressed objects within 2 object streams
- 36 named destinations out of 1000 (max. 500000)
- 81 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 251 PDF objects out of 1000 (max. 8388607)
+ 199 compressed objects within 2 object streams
+ 44 named destinations out of 1000 (max. 500000)
+ 125 words of extra memory for PDF output out of 10000 (max. 10000000)
 

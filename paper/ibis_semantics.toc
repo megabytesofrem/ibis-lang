@@ -1,10 +1,14 @@
 \contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
-\contentsline {subsection}{\numberline {1.1}Syntax Overview}{2}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Site Declarations}{2}{subsection.1.2}%
-\contentsline {section}{\numberline {2}Category Theory}{3}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Yoneda Lemma}{3}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Opposite Categories and Presheaves}{3}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Restriction Maps}{3}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Kan Extensions}{3}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Glueing axiom}{4}{subsection.2.5}%
-\contentsline {subsection}{\numberline {2.6}Geometric Morphisms}{5}{subsection.2.6}%
+\contentsline {subsection}{\numberline {1.1}Syntax Overview}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Site Declarations}{3}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Core: The Core Language}{4}{section.2}%
+\contentsline {section}{\numberline {3}The MLTT based type system}{5}{section.3}%
+\contentsline {section}{\numberline {4}Category Theory}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Yoneda Lemma}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Opposite Categories and Presheaves}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Restriction Maps}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Kan Extensions}{7}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Glueing axiom}{8}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Geometric Morphisms}{8}{subsection.4.6}%
+\contentsline {section}{\numberline {5}Glossary}{9}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Typing Judgments}{9}{subsection.5.1}%
