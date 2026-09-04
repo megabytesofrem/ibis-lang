@@ -69,26 +69,34 @@ modifyContext f = do
 
 pushL :: Entry -> Reduce ()
 pushL e = modify $ \st ->
-  let ctx = context st
-   in st{context = ctx{leftScope = e : leftScope ctx}}
+  case context st of
+    Zip l f r -> st{context = Zip (e : l) f r}
 
 pushR :: Entry -> Reduce ()
 pushR e = modify $ \st ->
-  let ctx = context st
-   in st{context = ctx{rightScope = e : rightScope ctx}}
+  case context st of
+    Zip l f r -> st{context = Zip l f (e : r)}
 
 popL :: Reduce (Maybe Entry)
-popL = modifyContext $ \ctx -> case ctx of
+popL = modifyContext $ \case
   Zip (e : lefts) focus' rights -> (Just e, Zip lefts focus' rights)
   Zip [] focus' rights -> (Nothing, Zip [] focus' rights)
 
+leftScope :: Zip -> [Entry]
+leftScope (Zip l _ _) = l
+
+rightScope :: Zip -> [Entry]
+rightScope (Zip _ _ r) = r
+
 setFocus :: Maybe Entry -> Zip -> Zip
-setFocus f z = z{focus = f}
+setFocus f (Zip l _ r) = Zip l f r
 
 popR :: Zip -> (Maybe Entry, Zip)
-popR z = case rightScope z of
+popR z@(Zip l f r) = case r of
   [] -> (Nothing, z)
-  (e : es) -> (Just e, z{rightScope = es})
+  (e : es) -> (Just e, Zip l f es)
+
+-------------------------------------------------
 
 defineMeta :: MetaVar -> Type -> CoreTerm -> Reduce ()
 defineMeta targetMeta ty solvedVal = do
@@ -112,12 +120,8 @@ applySubst subst st =
     }
  where
   updateContext :: Zip -> Zip
-  updateContext z =
-    Zip
-      { leftScope = map updateEnv (leftScope z)
-      , focus = fmap updateEnv (focus z)
-      , rightScope = map updateEnv (rightScope z)
-      }
+  updateContext (Zip l f r) =
+    Zip (map updateEnv l) (fmap updateEnv f) (map updateEnv r)
 
   updateEnv :: Entry -> Entry
   updateEnv entry = case entry of
@@ -151,13 +155,15 @@ freshMetaId = do
 freshProblemId :: Reduce Int
 freshProblemId = do
   st <- get
-  let fresh = nextMetaId st
-  put st{nextMetaId = fresh + 1}
+  let fresh = nextProblemId st
+  put st{nextProblemId = fresh + 1}
   pure fresh
 
 -- Occurence checking and inversion functions
 ------------------------------------------------
 
+-- | Check occurence of a list of metavariables in a term, returning an Occurrence value
+-- where occurence can be rigid-rigid, flexible-rigid, flexible-flexible, or not occurring at all.
 occurence :: [MetaVar] -> CoreTerm -> Occurrence
 occurence metas (Core.MVar m) =
   -- If the metavariable is in the list of metas, it's a strong rigid occurrence
@@ -170,7 +176,7 @@ isStrongRigid :: Occurrence -> Bool
 isStrongRigid OccurStrongRigid = True
 isStrongRigid _ = False
 
--- Check if a metavariable occurs in a term (used for occurs check during unification)
+-- | Occurs check. Check if a given metavariable occurs in a term.
 occursIn :: MetaVar -> CoreTerm -> Bool
 occursIn targetMeta (Core.MVar m) = targetMeta == MetaVar m
 occursIn targetMeta (Core.App f arg) = occursIn targetMeta f || occursIn targetMeta arg
@@ -208,6 +214,10 @@ invert targetMeta _tty es rhs = do
 unwindApp :: CoreTerm -> (CoreTerm, [CoreTerm])
 unwindApp (Core.App f arg) = let (g, args) = unwindApp f in (g, args ++ [arg])
 unwindApp t = (t, [])
+
+-- Flip an equation, swapping the left-hand side and right-hand side
+flipEq :: Equation -> Equation
+flipEq (Equation ty lhs rhs) = Equation ty rhs lhs
 
 -- | Build a mapping from the spine of metavariable applications to local parameter indices
 --
@@ -250,6 +260,11 @@ invertScope varMap term = case term of
   Core.Let name e body -> Core.Let name <$> invertScope varMap e <*> invertScope varMap body
   _ -> Just term -- For other terms, return as-is
 
+-- | Try to invert the spine of the equation and solve for the metavariable, stashing the problem
+-- as active in the worklist, and subsequently defining the metavariable with the inverted solution
+-- if successful.
+--
+-- If inversion fails, continue with the provided continuation.
 tryInvert :: Int -> Equation -> Type -> Reduce () -> Reduce ()
 tryInvert p eq@(Equation _eqTy lhs rhs) tty cont = case unwind lhs of
   Just (alpha, es) -> do
@@ -343,7 +358,7 @@ intersect phi psi (Core.Pi name dom cod) (x : xs) (y : ys) = do
 -- If the spine lengths do not match, we cannot intersect the contexts; return Nothing
 intersect _ _ _ _ _ = pure Nothing
 
--- Try to intersect two spines
+-- | Try to intersect two spines
 --
 -- This function checks if both argument types @ds@ and @es@ are valid spines (i.e., they consist purely)
 -- of metavariable indices.
@@ -403,6 +418,9 @@ tryIntersect p eq@(Equation _eqTy lhs rhs) targetMeta tty ds es = do
 -- Handle rigid-rigid unification
 --
 -- This is the case where both sides of the equation are rigid terms (i.e., not metavariables).
+--
+-- This is the trivial case of unification, in which we check structural equality of the two terms.
+-- If they are equal, we return an empty list of equations (no further work needed).
 rigidRigid :: CoreTerm -> CoreTerm -> Reduce [Equation]
 rigidRigid (Core.Universe u1) (Core.Universe u2) = do
   if u1 == u2
@@ -416,19 +434,15 @@ rigidRigid _ _ =
   throwError $
     Other "Unification failed: terms do not match."
 
--- Handle flexible-rigid unification
+-- | Flexible-rigid unification
 --
 -- This is the case where the left-hand side is a metavariable applied to some arguments,
 -- and the right-hand side is a rigid term.
-flexRigid :: Int -> Problem -> Reduce ()
-flexRigid p prob@(Problem targetMeta _ _rhs) = do
-  let eq = problemEquation prob
-      lhs = eqLHS eq
-      _tty = eqType eq
+flexRigid :: Int -> MetaVar -> Equation -> Reduce ()
+flexRigid p targetMeta eq@(Equation ty lhs rhs) = do
   case unwindApp lhs of
     (Core.MVar m, _es) -> do
       let meta = MetaVar m
-      let targetMeta' = MetaVar targetMeta
 
       -- Walk left context using popL until we focus the meta
       popL >>= \case
@@ -436,20 +450,75 @@ flexRigid p prob@(Problem targetMeta _ _rhs) = do
           | mv == meta -> do
               -- Scope check using elements remaining on left stack
               st <- get
-              if targetMeta' `elem` fmv (leftScope (context st))
+              if targetMeta `elem` fmv (leftScope (context st))
                 then do
                   _ <- pushL e
                   stashBlocked p eq
                 else tryInvert p eq ty (stashBlocked p eq)
           | otherwise -> do
               _ <- pushR e
-              flexRigid p prob
+              flexRigid p targetMeta eq
         Just e -> do
           _ <- pushR e
-          flexRigid p prob
+          flexRigid p targetMeta eq
         Nothing ->
           stashBlocked p eq
     _ -> throwError $ Other "Unification failed: lhs is not a metavariable application."
 
-flexFlex :: Int -> Problem -> Reduce ()
-flexFlex p prob@(Problem targetMeta _ _rhs) = undefined
+-- | Flexible-flexible unification
+--
+-- This is the case where both sides of the equation are metavariables applied to some arguments
+--
+-- Cases:
+--  1. If both metavariables are the same, we attempt to intersect their spines.
+--  2. If the focus is on the left meta, we try to invert its spine against the right meta.
+--  3. If the focus is on the right meta, we try to invert its spine against the left meta.
+--  4. If the focus is on a different meta, we check for scope dependencies and either stash the problem
+--     or shift right and step left.
+--  5. As a fallback, if none of the above cases apply, we shift right and step left, continuing.
+flexFlex :: Int -> Equation -> Reduce ()
+flexFlex pId eq@(Equation tty lhs rhs) = case (unwindApp lhs, unwindApp rhs) of
+  ((Core.MVar alphaId, ds), (Core.MVar betaId, es)) -> do
+    let alpha = MetaVar alphaId
+        beta = MetaVar betaId
+
+    popL >>= \case
+      Just e@(Meta gamma gammaTy maybeVal) -> case maybeVal of
+        -- HOLE (unsolved meta: try to solve the flex-flex problem by intersecting the spines)
+        Nothing -> do
+          st <- get
+          condMatch alpha beta gamma gammaTy (context st) ds es e
+
+        -- Solved meta: shift right and step left
+        Just _ -> pushR e >> flexFlex pId eq
+      -- Non-meta entry: shift right and step left
+      Just e -> pushR e >> flexFlex pId eq
+      -- End of left scope
+      Nothing -> stashBlocked pId eq
+  -- Defensive fallback: not a flex-flex shape, so keep the problem blocked.
+  _ -> stashBlocked pId eq
+ where
+  -- 1. Same metavariable: ?α ds ≡ ?α es
+  condMatch alpha beta gamma gammaTy ctx ds es e
+    | gamma == alpha && gamma == beta = do
+        stashBlocked pId eq
+        tryIntersect pId eq gamma gammaTy ds es
+
+    -- 2. Focus is left meta α: try invert ?α ds = ?β es
+    -- On failure, falls back to flexRigid targeting β with (symEq eq)
+    | gamma == alpha = do
+        tryInvert pId eq gammaTy (flexRigid pId beta (flipEq eq))
+
+    -- 3. Focus is right meta β: try invert ?β es = ?α ds
+    -- On failure, falls back to flexRigid targeting α with eq
+    | gamma == beta = do
+        let flipVal = flipEq eq
+        tryInvert pId flipVal gammaTy (flexRigid pId alpha eq)
+
+    -- 4. Scope dependency check
+    | gamma `elem` fmv ctx || gamma `elem` fmv eq = do
+        pushL e
+        stashBlocked pId eq
+
+    -- 5. Fallback: shift right and step left
+    | otherwise = pushR e >> flexFlex pId eq

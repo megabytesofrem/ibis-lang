@@ -2,7 +2,7 @@ module Ibis.Typecheck.Unify.HasFMV where
 
 import Ibis.Syntax.AST.Core (CoreTerm, Index)
 import qualified Ibis.Syntax.AST.Core as Core
-import Ibis.Typecheck.Unify.Types (Entry (..), Equation (..), MetaVar (..), Problem (..))
+import Ibis.Typecheck.Unify.Types (Entry (..), Equation (..), MetaVar (..), Problem (..), Zip (Zip))
 
 -- | Class for types that have free metavariables within them
 class HasFMV a where
@@ -41,6 +41,10 @@ instance HasFMV Equation where
 
 instance HasFMV Problem where
   fmv (Problem _ _ eq) = fmv eq
+
+instance HasFMV Zip where
+  fmv (Zip lhs (Just focus) rhs) = fmv lhs ++ fmv focus ++ fmv rhs
+  fmv (Zip lhs Nothing rhs) = fmv lhs ++ fmv rhs
 
 -- | Extract the free variables from a @CoreTerm@, returning a list of @Index@ values
 -- representing the free variables.

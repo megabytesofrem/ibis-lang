@@ -57,11 +57,7 @@ data Entry
 -- by Dale Miller and Gopalan Nadathur uses a list of pairs for substitutions, but we use a Map for efficiency.
 type Subst = M.Map MetaVar CoreTerm
 
-data Zip = Zip
-  { leftScope :: [Entry] -- Entries to the left of the focus (newer/local)
-  , focus :: Maybe Entry -- Currently focused entry (the cursor)
-  , rightScope :: [Entry] -- Entries to the right of the focus (older/global)
-  }
+data Zip = Zip [Entry] (Maybe Entry) [Entry]
   deriving (Show, Eq)
 
 -- | The state of the unification solver, including the current scope stack, meta-variable substitution map,
