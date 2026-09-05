@@ -11,7 +11,7 @@ import Data.Either (isLeft)
 import Ibis.Syntax.AST.Core qualified as Core
 import Ibis.Syntax.Parser (pDecl, pExpr)
 import Ibis.Typecheck.Elab (elabDecl, elabTerm)
-import Ibis.Typecheck.Types (emptyElabCtx, runElaboration)
+import Ibis.Typecheck.ElabCtx (emptyElabCtx, runElaboration)
 
 import Test.Hspec
 

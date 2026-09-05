@@ -3,6 +3,23 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 
+-- ===================================================================================
+-- WARNING: HERE BE DRAGONS. DO NOT TOUCH THIS MODULE UNDER ANY CIRCUMSTANCES
+-- ===================================================================================
+--
+-- This module implements Miller's Higher Order Pattern Unification. It was
+-- forged over multiple days to weeks of 13-hour caffeinated programming sessions
+-- with an LLM assisted deciphering of a cryptic paper from 2012.
+--
+-- I wrote most of this code myself, and I have no clue how it fucking works.
+-- It is treated as a black box that implements a paper, and never should be modified
+-- once it is working; for that way lies madness.
+--
+-- This serves as a warning to future me, and to anyone else who dares to touch this.
+-- If you want to understand it, read that damn paper and pray to whatever deity you
+-- believe in that you can decipher it.
+-- ===================================================================================
+
 -- | Unification and meta-variable solving pass based on Miller's Higher Order
 -- Pattern Unification algorithm.
 module Ibis.Typecheck.Unify.Solver where
@@ -31,6 +48,14 @@ newtype Reduce a = Reduce {runReduce :: StateT SolverState (ExceptT TcError IO) 
     , MonadError TcError
     , MonadIO
     )
+
+-- | Eliminations exposed by the rigid spine matcher.  This belongs here while
+-- the solver is the only consumer of elimination spines.
+data Elim
+  = Apply CoreTerm
+  | Proj1
+  | Proj2
+  deriving (Show, Eq)
 
 -- Stashing functions
 ------------------------------------------------
@@ -194,7 +219,16 @@ occursIn _ _ = False
 --
 -- This may throw an error up the monad stack if the inversion is not possible, either
 -- due to the Miller pattern condition not being satisfied or due to an occurs check failure.
-invert :: MetaVar -> Type -> [CoreTerm] -> CoreTerm -> Reduce CoreTerm
+invert
+  :: MetaVar
+  -- ^ The metavariable to solve for
+  -> Type
+  -- ^ The type of the metavariable
+  -> [CoreTerm]
+  -- ^ The list of arguments (spine) applied to the metavariable
+  -> CoreTerm
+  -- ^ The right-hand side term of the equation
+  -> Reduce CoreTerm
 invert targetMeta _tty es rhs = do
   -- Occurs check: does the meta variable occur in the right-hand side of the equation?
   let occ = occurence [targetMeta] rhs
@@ -522,3 +556,72 @@ flexFlex pId eq@(Equation tty lhs rhs) = case (unwindApp lhs, unwindApp rhs) of
 
     -- 5. Fallback: shift right and step left
     | otherwise = pushR e >> flexFlex pId eq
+
+-- | Decompose two matching rigid elimination spines, producing a list of equations for each corresponding
+-- pair of eliminations.
+matchSpine
+  :: (Type, CoreTerm)
+  -- ^ The left-hand side term and its type
+  -> [Elim]
+  -- ^ The left-hand side elimination spine
+  -> (Type, CoreTerm)
+  -- ^ The right-hand side term and its type
+  -> [Elim]
+  -- ^ The right-hand side elimination spine
+  -> Reduce [Equation]
+  -- ^ A list of equations for each corresponding pair of eliminations
+matchSpine = go
+ where
+  go :: (Type, CoreTerm) -> [Elim] -> (Type, CoreTerm) -> [Elim] -> Reduce [Equation]
+  go _ [] _ [] = pure []
+  go (Pi _ dom cod, u) (Apply x : xs) (Pi _ dom' cod', v) (Apply y : ys)
+    | dom == dom' = do
+        rest <- go (instantiate x cod, App u x) xs (instantiate y cod', App v y) ys
+        pure (Equation dom x y : rest)
+    | otherwise = throwError (CannotInferType "Unification blocked: application domains are not yet identical.")
+  go (Sigma _ dom _, u) (Proj1 : xs) (Sigma _ dom' _, v) (Proj1 : ys)
+    | dom == dom' = go (dom, Fst u) xs (dom', Fst v) ys
+    | otherwise = throwError (CannotInferType "Unification blocked: projection domains are not yet identical.")
+  go (Sigma _ dom cod, u) (Proj2 : xs) (Sigma _ dom' cod', v) (Proj2 : ys)
+    | dom == dom' =
+        go
+          (instantiate (Fst u) cod, Snd u)
+          xs
+          (instantiate (Fst v) cod', Snd v)
+          ys
+    | otherwise = throwError (CannotInferType "Unification blocked: projection domains are not yet identical.")
+  go (MVar _, _) _ (MVar _, _) _ =
+    throwError (CannotInferType "Unification blocked: elimination type is unresolved.")
+  go _ _ _ _ = throwError (TypeMismatch "Unification: elimination spines do not match their types.")
+
+  instantiate arg = aux 0
+   where
+    aux depth term = case term of
+      Var (Index i)
+        | i == depth -> shift depth arg
+        | i > depth -> Var (Index (i - 1))
+      Pi name dom body -> Pi name (aux depth dom) (aux (depth + 1) body)
+      Lam name body -> Lam name (aux (depth + 1) body)
+      App f x -> App (aux depth f) (aux depth x)
+      Sigma name dom body -> Sigma name (aux depth dom) (aux (depth + 1) body)
+      Pair x y -> Pair (aux depth x) (aux depth y)
+      Fst x -> Fst (aux depth x)
+      Snd x -> Snd (aux depth x)
+      Let name x body -> Let name (aux depth x) (aux (depth + 1) body)
+      Ann x ty -> Ann (aux depth x) (aux depth ty)
+      other -> other
+
+  shift amount = goShift 0
+   where
+    goShift depth term = case term of
+      Var (Index i) | i >= depth -> Var (Index (i + amount))
+      Pi name dom body -> Pi name (goShift depth dom) (goShift (depth + 1) body)
+      Lam name body -> Lam name (goShift (depth + 1) body)
+      App f x -> App (goShift depth f) (goShift depth x)
+      Sigma name dom body -> Sigma name (goShift depth dom) (goShift (depth + 1) body)
+      Pair x y -> Pair (goShift depth x) (goShift depth y)
+      Fst x -> Fst (goShift depth x)
+      Snd x -> Snd (goShift depth x)
+      Let name x body -> Let name (goShift depth x) (goShift (depth + 1) body)
+      Ann x ty -> Ann (goShift depth x) (goShift depth ty)
+      other -> other
