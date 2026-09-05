@@ -49,7 +49,10 @@ library
   exposed-modules:
     -- Ibis.Typecheck.MVar
     -- Ibis.Typecheck.Types
-    Ibis.Category.Kernel
+    Ibis.Category.Presheaf
+    Ibis.Category.Presheaf.Arrow
+    Ibis.Category.Presheaf.Opposite
+    Ibis.Category.Presheaf.Type
     Ibis.Prettyprint
     Ibis.Syntax.AST
     Ibis.Syntax.AST.Core
