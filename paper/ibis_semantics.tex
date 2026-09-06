@@ -216,8 +216,36 @@ For any locally small category $\mathcal{C}$, an object $X \in \mathcal{C}$, and
 In other words, natural transformations from the representable hom-functor $\text{Hom}_{\mathcal{C}}(-, X)$ to $F$ are in a one-to-one correspondence with the elements of the set $F(X)$.
 
 This yields the Yoneda Embedding $\textbf{y}: \mathcal{C} \to \textbf{Set}^{\mathcal{C}^{\text{op}}}$, sending $X \mapsto \text{Hom}_{\mathcal{C}}(-, X)$, which fully and faithfully embeds $\mathcal{C}$ into its presheaf category while preserving its internal structure.
+
 \subsection{Opposite Categories and Presheaves}
 A presheaf $\mathcal{F}$ over a category $\mathcal{C}$ is a contravariant functor $\mathcal{F} : \mathcal{C}^\text{op} \to \textbf{Set}$, where $\mathcal{C}^\text{op}$ is the opposite category of $\mathcal{C}$ and $\textbf{Set}$ is the category of sets, such that for every morphism $f: X \to Y$ in $\mathcal{C}$, there is a corresponding morphism $f^{\text{op}}: Y \to X$ in $\mathcal{C}^{\text{op}}$.
+
+
+\subsection{Grothendieck Topology}
+A Grothendieck topology $J$ on a category $\mathcal{C}$ is an assignment to each object $c \in \mathcal{C}$ a collection of covering sieves $J(c)$,
+satisfying the following axioms:
+
+If $g: d \to c$ is morphism in a category $\mathcal{C}$ and $F \subset \mathcal{C}(-, c)$ a sieve on $c$:
+
+\[
+    g^*F = \{ h: dom(h) \to d \mid g \circ h \in F \} \subset \mathcal{C}(-, d)
+\]
+
+is a sieve on $d$, called the pullback sieve of $F$ along $g$.
+
+\begin{enumerate}
+    \item Stability under base change: If $F$ is a sieve that covers $c$ and $g: d \to c$ is a morphism, then the pullback sieve $g^*F$ covers $d$.
+    \item Local character: Let $F, F'$ be sieves on $c$. Suppose $F$ covers $c$ and the pullback sieve $g^*F'$ covers $d$ for every morphism $g: d \to c$ in $F$. Then $F'$ covers $c$.
+    \item The maximal sieve: The maximal sieve $hom(-, c) \hookrightarrow hom(-, c)$ is always a covering sieve.
+\end{enumerate}
+
+The set of covering sieves on an object is denoted $J(c)$ and it has the following properties:
+\begin{itemize}
+    \item If $F, F' \in J(c)$, then $F \cap F' \in J(c)$.
+    \item If S is a sieve on $c$ and $S \supset F$ for some $F \in J(c)$, then $S \in J(c)$.
+\end{itemize}
+
+A category equipped with a Grothendieck topology is called a \textbf{site}. We can thus say that a site $(C, J)$ is a category $C$ equipped with a Grothendieck topology $J$ (the coverage of $C$).
 
 
 \subsection{Restriction Maps}

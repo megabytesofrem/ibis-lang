@@ -49,6 +49,7 @@ library
   exposed-modules:
     -- Ibis.Typecheck.MVar
     -- Ibis.Typecheck.Types
+    Ibis.Category.Grothendieck
     Ibis.Category.Presheaf
     Ibis.Category.Presheaf.Arrow
     Ibis.Category.Presheaf.Opposite

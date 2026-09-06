@@ -6,9 +6,10 @@
 \contentsline {section}{\numberline {4}Category Theory}{6}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Yoneda Lemma}{6}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Opposite Categories and Presheaves}{6}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Restriction Maps}{7}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Kan Extensions}{7}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Glueing axiom}{8}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Geometric Morphisms}{8}{subsection.4.6}%
-\contentsline {section}{\numberline {5}Glossary}{9}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Typing Judgments}{9}{subsection.5.1}%
+\contentsline {subsection}{\numberline {4.3}Grothendieck Topology}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Restriction Maps}{7}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Kan Extensions}{8}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Glueing axiom}{8}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Geometric Morphisms}{9}{subsection.4.7}%
+\contentsline {section}{\numberline {5}Glossary}{10}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Typing Judgments}{10}{subsection.5.1}%
