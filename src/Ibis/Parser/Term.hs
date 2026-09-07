@@ -1,17 +1,17 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
-module Ibis.Syntax.Parser.Term where
+module Ibis.Parser.Term where
 
 import Control.Monad (guard)
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer qualified as L
 
-import Ibis.Syntax.AST.Operator (Binop (..), Unop (..))
-import Ibis.Syntax.AST.Surface
-import Ibis.Syntax.Parser.Lexer (Parser, lexeme, pCtorName, pIdent, pLiteral, parens, symbol)
-import Ibis.Syntax.Parser.Pattern (pPattern)
-import Ibis.Syntax.Parser.Tactic (pByBlock)
+import Ibis.AST.Operator (Binop (..), Unop (..))
+import Ibis.AST.Surface
+import Ibis.Parser.Lexer (Parser, lexeme, pCtorName, pIdent, pLiteral, parens, symbol)
+import Ibis.Parser.Pattern (pPattern)
+import Ibis.Parser.Tactic (pByBlock)
 
 -- Parse a typed pair: x : A
 typedPair :: Parser Param

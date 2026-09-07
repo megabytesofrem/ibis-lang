@@ -1,7 +1,7 @@
-module Ibis.Syntax.Parser.Pattern (pPattern) where
+module Ibis.Parser.Pattern (pPattern) where
 
-import Ibis.Syntax.AST (Pat (..))
-import Ibis.Syntax.Parser.Lexer (Parser, enclosed, pCtorName, pIdent, pLiteral, symbol)
+import Ibis.AST (Pat (..))
+import Ibis.Parser.Lexer (Parser, enclosed, pCtorName, pIdent, pLiteral, symbol)
 import Text.Megaparsec
 
 ctorPattern :: Parser Pat

@@ -1,6 +1,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
-module Ibis.Syntax.Parser.Lexer
+module Ibis.Parser.Lexer
   ( Parser
 
     -- * Lexing utilities
@@ -26,7 +26,7 @@ where
 
 import Data.List (intersperse)
 import Data.Void (Void)
-import Ibis.Syntax.AST (Literal (..))
+import Ibis.AST (Literal (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L

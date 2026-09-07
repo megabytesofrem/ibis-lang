@@ -32,8 +32,8 @@ import Data.Map qualified as M
 
 import Control.Monad (when)
 import Data.Maybe (fromMaybe)
-import Ibis.Syntax.AST.Core (CoreTerm (..), Index (Index))
-import Ibis.Syntax.AST.Core qualified as Core
+import Ibis.AST.Core (CoreTerm (..), Index (Index))
+import Ibis.AST.Core qualified as Core
 import Ibis.Typecheck.Error (TcError (..))
 import Ibis.Typecheck.Unify.HasFMV (HasFMV (..), freeVars)
 import Ibis.Typecheck.Unify.Types

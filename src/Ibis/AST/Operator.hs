@@ -1,4 +1,4 @@
-module Ibis.Syntax.AST.Operator
+module Ibis.AST.Operator
   ( Unop (..)
   , Binop (..)
   )

@@ -14,10 +14,10 @@ import Control.Monad.State (get, put)
 import Data.List (elemIndex)
 import Data.Map qualified as M
 
-import Ibis.Syntax.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
-import Ibis.Syntax.AST.Core (CoreDecl (..), CoreTerm, Index (..))
-import Ibis.Syntax.AST.Core qualified as Core
-import Ibis.Syntax.AST.Surface (Decl (..), Pat (..), Term (..))
+import Ibis.AST (Binop (..), Literal (LitBool), Param (..), SurfaceUniverse (..), Unop (..))
+import Ibis.AST.Core (CoreDecl (..), CoreTerm, Index (..))
+import Ibis.AST.Core qualified as Core
+import Ibis.AST.Surface (Decl (..), Pat (..), Term (..))
 
 import Ibis.Typecheck.ElabCtx
 import Ibis.Typecheck.Error (TcError (..))

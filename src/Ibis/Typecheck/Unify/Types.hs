@@ -6,7 +6,7 @@
 module Ibis.Typecheck.Unify.Types where
 
 import Data.Map qualified as M
-import Ibis.Syntax.AST.Core (CoreTerm)
+import Ibis.AST.Core (CoreTerm)
 
 data Equation = Equation
   { eqType :: CoreTerm

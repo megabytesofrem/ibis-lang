@@ -5,7 +5,7 @@
 
 -- | Defines an arrow for a presheaf, representing inclusion, composition and identity between
 -- objects in a category.
-module Ibis.Category.Presheaf.Arrow
+module Category.Presheaf.Arrow
   ( Arrow (..)
   , eqArrow
   ) where

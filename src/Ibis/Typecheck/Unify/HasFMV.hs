@@ -1,7 +1,10 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+
 module Ibis.Typecheck.Unify.HasFMV where
 
-import Ibis.Syntax.AST.Core (CoreTerm, Index)
-import qualified Ibis.Syntax.AST.Core as Core
+import Ibis.AST.Core (CoreTerm, Index)
+import Ibis.AST.Core qualified as Core
+
 import Ibis.Typecheck.Unify.Types (Entry (..), Equation (..), MetaVar (..), Problem (..), Zip (Zip))
 
 -- | Class for types that have free metavariables within them

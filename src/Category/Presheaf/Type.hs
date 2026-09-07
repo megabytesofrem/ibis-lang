@@ -9,7 +9,7 @@
 
 -- | Defines a presheaf - a contravariant functor from a category to the category of sets (or set-like structures)
 -- along with restriction operations over sections within the presheaf, and sheaf gluing axioms for combining sections over covers.
-module Ibis.Category.Presheaf.Type
+module Category.Presheaf.Type
   ( -- * Custom functor and contravariant functor classes
     KFunctor (..)
   , KContravariant (..)
@@ -34,8 +34,8 @@ import Data.Type.Equality ((:~:) (Refl))
 
 import Prelude hiding (id, (.))
 
-import Ibis.Category.Presheaf.Arrow (Arrow (..), eqArrow)
-import Ibis.Category.Presheaf.Opposite (Dual (..))
+import Category.Presheaf.Arrow (Arrow (..), eqArrow)
+import Category.Presheaf.Opposite (Dual (..))
 
 -- | A functor from a category 'k' to the category of Haskell types (Hask).
 -- Data.Functor is too specialized so we define KFunctor - a functor over arbitrary categories.

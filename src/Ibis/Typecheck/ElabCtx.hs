@@ -10,7 +10,7 @@ import Control.Monad.State (MonadState, StateT, runStateT)
 import Data.List (elemIndex)
 import Data.Map qualified as M
 
-import Ibis.Syntax.AST.Core (Index (Index), Level (Level))
+import Ibis.AST.Core (Index (Index), Level (Level))
 import Ibis.Typecheck.Error (TcError (..))
 
 -------------------------------------------------------------

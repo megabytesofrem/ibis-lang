@@ -5,7 +5,7 @@ module Ibis.Typecheck.Check where
 import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ReaderT, asks, local)
 
-import Ibis.Syntax.AST.Core
+import Ibis.AST.Core
 import Ibis.Typecheck.Error (TcError (..))
 import Ibis.Typecheck.Eval (convert, eval, evalFst, quote)
 

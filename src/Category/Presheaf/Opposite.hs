@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeOperators #-}
 
 -- | The opposite category of a given category denoted C^op, where all arrows are reversed
-module Ibis.Category.Presheaf.Opposite
+module Category.Presheaf.Opposite
   ( Dual (..)
   , OpArrow
   ) where
@@ -14,7 +14,7 @@ import Control.Category
 import Data.Kind (Type)
 import Prelude hiding (id, (.))
 
-import Ibis.Category.Presheaf.Arrow (Arrow)
+import Category.Presheaf.Arrow (Arrow)
 
 -- | Dual wraps arrows @arr a b@ in a category @k@ to represent the opposite category,
 -- reversing the direction of morphisms, yielding @arr b a@

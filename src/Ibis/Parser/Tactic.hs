@@ -1,10 +1,10 @@
-module Ibis.Syntax.Parser.Tactic where
+module Ibis.Parser.Tactic where
 
 import Text.Megaparsec
 
-import Ibis.Syntax.AST.Surface (Tactic (..))
-import Ibis.Syntax.Parser.Lexer (Parser, pIdent, symbol)
-import {-# SOURCE #-} Ibis.Syntax.Parser.Term (pApp)
+import Ibis.AST.Surface (Tactic (..))
+import Ibis.Parser.Lexer (Parser, pIdent, symbol)
+import {-# SOURCE #-} Ibis.Parser.Term (pApp)
 
 pTacticIntro :: Parser Tactic
 pTacticIntro = TacticIntro <$> (symbol "intro" *> pIdent)

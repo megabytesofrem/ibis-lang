@@ -1,5 +1,5 @@
 -- | Surface syntax AST for Ibis
-module Ibis.Syntax.AST.Surface
+module Ibis.AST.Surface
   ( Literal (..)
   , SurfaceUniverse (..)
   , Term (..)
@@ -16,7 +16,7 @@ module Ibis.Syntax.AST.Surface
   )
 where
 
-import Ibis.Syntax.AST.Operator (Binop, Unop)
+import Ibis.AST.Operator (Binop, Unop)
 
 -------------------------------------------------------------
 -- EXPRESSION NODES

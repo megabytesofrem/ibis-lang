@@ -2,7 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | Core syntax AST for Ibis
-module Ibis.Syntax.AST.Core
+module Ibis.AST.Core
   ( -- * Debruijn indices
     Index (..)
   , Level (..)
@@ -20,7 +20,7 @@ module Ibis.Syntax.AST.Core
 where
 
 import Data.List (intercalate)
-import Ibis.Syntax.AST.Surface (Literal (..), Pat (..))
+import Ibis.AST.Surface (Literal (..), Pat (..))
 
 -- | De Bruijn index for variables and type variables, relative
 -- distance to binder (where 0 is the innermost lambda).

@@ -2,8 +2,8 @@
 module Ibis.Typecheck.Eval where
 
 import Control.Monad (zipWithM)
-import Ibis.Syntax.AST.Core
-import Ibis.Syntax.AST.Surface (Pat (..))
+import Ibis.AST.Core
+import Ibis.AST.Surface (Pat (..))
 
 type Env = [Value]
 

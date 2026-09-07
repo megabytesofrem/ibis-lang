@@ -4,7 +4,7 @@
 
 -- | Defines a Grothendieck site, which is a category equipped with a topology that specifies
 -- which families of morphisms (sieves) are considered to be covers of objects in the category.
-module Ibis.Category.Grothendieck where
+module Category.Grothendieck where
 
 -- Implementation based on the definitions from the following sources:
 -- https://ncatlab.org/nlab/show/Grothendieck+topology
@@ -16,7 +16,7 @@ import Prelude hiding (id, (.))
 
 -- Arrow types in the Grothendieck topology are arrows between sections of a presheaf
 -- representing inclusion, composition and identity between objects in a category.
-import Ibis.Category.Presheaf.Arrow (Arrow)
+import Category.Presheaf.Arrow (Arrow)
 
 -- | A sieve on an object 'c' is a family of arrows into 'c' that is closed under precomposition
 -- (leftmost composition) with any arrow in the category, representing a collection of subobjects or
