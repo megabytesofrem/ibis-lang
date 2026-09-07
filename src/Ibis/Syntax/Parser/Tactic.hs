@@ -114,4 +114,5 @@ pByBlock = do
   _ <- symbol "by"
   -- Parse a sequence of tactics seperated by optional semicolons
   tactics <- many (pTactic <* optional (symbol ";"))
+  _ <- symbol "qed"
   pure tactics

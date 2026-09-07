@@ -347,7 +347,7 @@ pFunctionBody :: Parser FunctionBody
 pFunctionBody =
   choice
     [ SimpleBody <$> pExpr -- def f (x : A) (y : B) : C := e
-    , TacticBody <$> pByBlock -- def f (x : A) (y : B) : C := by ...
+    , TacticBody <$> pByBlock -- def f (x : A) (y : B) : C := by ... qed
     ]
 
 -- Parse a function declaration:
@@ -356,6 +356,7 @@ pFunctionBody =
 -- def f (x : A) (y : B) : C := by
 --   intro z
 --   exact (g z)
+-- qed
 pFunctionDeclaration :: Parser Decl
 pFunctionDeclaration = do
   _ <- symbol "def"

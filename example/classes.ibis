@@ -1,0 +1,13 @@
+-- Classes as in typeclasses, not object-oriented classes. Ibis 
+-- does not facilitate object oriented programming, the analogue for
+-- an OOP class is a struct or inductive.
+
+class Show (a : Type u -> Type u) where
+  def show a : String
+
+struct Dog where
+  name : String
+  age_dog_years : Nat
+
+instance Show for Dog where
+  show d = Dog.name d <> Dog.age_dog_years d
