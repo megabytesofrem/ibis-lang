@@ -14,7 +14,6 @@ be limited to C99.
 - Wire up the unification solver to the elaborator and implement a tactic system inspired by Lean 4
   for proving theorems and constructing terms.
 
-
 ## AI Transparency
 Large Language Models (LLMs) are used solely as a tool to assist with the following tasks:
 - *Paper Translation*: Decompiling dense, cryptic papers into reference algorithms for implementation.
