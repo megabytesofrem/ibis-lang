@@ -21,8 +21,8 @@ import Category.Presheaf.Arrow (Arrow)
 -- | A sieve on an object 'c' is a family of arrows into 'c' that is closed under precomposition
 -- (leftmost composition) with any arrow in the category, representing a collection of subobjects or
 -- covers of 'c'
-data Sieve obj (c :: obj) where
-  Sieve :: {contains :: forall (d :: obj). Arrow obj d c -> Bool} -> Sieve obj c
+data Sieve cat (c :: cat) where
+  Sieve :: {contains :: forall (d :: cat). Arrow cat d c -> Bool} -> Sieve cat c
 
 -- | A Grothendieck site topology 'J' assigns to each object 'c' in the category a collection of
 -- covering sieves, satisfying the following axioms:
@@ -34,32 +34,32 @@ data Sieve obj (c :: obj) where
 -- for every arrow g: d -> c in F. Then F' covers c.
 --
 -- 3. The maximal sieve: The maximal sieve @hom(-, c) -> hom(-, c)@ is always a covering sieve.
-data SiteTopology obj where
+data SiteTopology cat where
   SiteTopology
-    :: { isCover :: forall (c :: obj). Sieve obj c -> Bool
+    :: { isCover :: forall (c :: cat). Sieve cat c -> Bool
        }
-    -> SiteTopology obj
+    -> SiteTopology cat
 
 -- | A category equipped with a Grothendieck topology, forming a Grothendieck site: C(J),
 -- where C is a category and J is a Grothendieck topology.
-data GrothendieckSite obj where
+data GrothendieckSite cat where
   GrothendieckSite
-    :: { topology :: SiteTopology obj -- The Grothendieck topology J on the category C
+    :: { topology :: SiteTopology cat -- The Grothendieck topology J on the category C
        }
-    -> GrothendieckSite obj
+    -> GrothendieckSite cat
 
 -- | Pullback a sieve @F@ along a morphism @g: d -> c@ to obtain a sieve on @d@.
-pullbackSieve :: Arrow obj d c -> Sieve obj c -> Sieve obj d
+pullbackSieve :: Arrow cat d c -> Sieve cat c -> Sieve cat d
 pullbackSieve g (Sieve f) = Sieve $ \h -> f (g . h)
 
 -- | Check if a sieve @F@ is a covering sieve in the Grothendieck site @C(J)@.
-isCoveringSieve :: GrothendieckSite obj -> Sieve obj c -> Bool
+isCoveringSieve :: GrothendieckSite cat -> Sieve cat c -> Bool
 isCoveringSieve (GrothendieckSite j) sieve = isCover j sieve
 
 -- | Construct a Grothendieck site from a given covering sieve predicate.
 --
 -- The predicate must satisfy the Grothendieck topology axioms.
-mkSite :: (forall (c :: obj). Sieve obj c -> Bool) -> Maybe (GrothendieckSite obj)
+mkSite :: (forall (c :: cat). Sieve cat c -> Bool) -> Maybe (GrothendieckSite cat)
 mkSite isCover' =
   let j = SiteTopology isCover'
       maximalSieve = Sieve $ \_ -> True

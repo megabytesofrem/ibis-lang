@@ -61,14 +61,14 @@ data Lan arr f u where
 instance (Category k) => KFunctor k (Lan k f) where
   fmapK h (Lan kc fc) = Lan (h . kc) fc
 
-instance KContravariant (Arrow obj) (Section val) where
+instance KContravariant (Arrow cat) (Section val) where
   contramapK Id secV = secV
   contramapK Inclusion secV = Restrict Inclusion secV
   contramapK (Comp g f) secV =
     let secMid = contramapK f secV
      in contramapK g secMid
 
-instance (KContravariant (Arrow obj) (Section val)) => KContravariant (Dual (Arrow obj)) (Section val) where
+instance (KContravariant (Arrow cat) (Section val)) => KContravariant (Dual (Arrow cat)) (Section val) where
   contramapK (Dual arr) sec = Restrict arr sec
 
 instance (Eq val) => Eq (Section val u) where
@@ -83,15 +83,15 @@ instance (Eq val) => Eq (GluedSection val u v) where
   Glue sec1u sec1v == Glue sec2u sec2v = sec1u == sec2u && sec1v == sec2v
 
 -- | A section of a presheaf over an object 'u' in a category
-data Section val (u :: obj) where
+data Section val (u :: cat) where
   Base :: val -> Section val u
   Restrict
-    :: Arrow obj u v
+    :: Arrow cat u v
     -> Section val v
     -> Section val u
 
 -- | A glued section of two sections over a binary cover (U ∪ V)
-data GluedSection val (u :: obj) (v :: obj) where
+data GluedSection val (u :: cat) (v :: cat) where
   Glue
     :: Section val u
     -> Section val v
@@ -116,8 +116,8 @@ extend p (Lan arrow fc) = restrict p (Dual arrow) fc
 -- | Sheaf gluing axiom
 glue
   :: (Eq val)
-  => Arrow obj w u
-  -> Arrow obj w v
+  => Arrow cat w u
+  -> Arrow cat w v
   -> Section val u
   -> Section val v
   -> Maybe (GluedSection val u v)
@@ -129,5 +129,5 @@ glue arrU arrV secU secV =
         else Nothing
 
 -- | Construct a presheaf of sections over a category of arrows and a given value type for the sections.
-mkPresheaf :: Presheaf (Arrow obj) (Section val)
+mkPresheaf :: Presheaf (Arrow cat) (Section val)
 mkPresheaf = Presheaf{restrict = \(Dual arr) secV -> contramapK arr secV}

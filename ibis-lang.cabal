@@ -49,6 +49,7 @@ library
   exposed-modules:
     -- Ibis.Typecheck.MVar
     -- Ibis.Typecheck.Types
+    Category.FiniteCover
     Category.Grothendieck
     Category.Presheaf
     Category.Presheaf.Arrow
@@ -60,6 +61,7 @@ library
     Ibis.AST.Core
     Ibis.AST.Operator
     Ibis.AST.Surface
+    Ibis.Compiler.WorldGen
     Ibis.Parser
     Ibis.Parser.Lexer
     Ibis.Parser.Pattern

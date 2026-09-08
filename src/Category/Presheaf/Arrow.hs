@@ -14,28 +14,28 @@ import Control.Category
 import Data.Type.Equality ((:~:) (Refl))
 import Prelude hiding (id, (.))
 
--- | An arrow in a category where objects are of type 'obj'
-data Arrow obj (u :: obj) (v :: obj) where
+-- | An arrow in a category where objects are of type 'cat'
+data Arrow cat (u :: cat) (v :: cat) where
   -- The identity arrow for an object 'u' in a category
-  Id :: Arrow obj u u
+  Id :: Arrow cat u u
   -- Inclusion: u is a valid subobject/cover of v, an arrow from u -> v
-  Inclusion :: Arrow obj u v
+  Inclusion :: Arrow cat u v
   -- Composition of two arrows: if f: u -> v and g: v -> w, then g . f: u -> w
-  Comp :: Arrow obj v w -> Arrow obj u v -> Arrow obj u w
+  Comp :: Arrow cat v w -> Arrow cat u v -> Arrow cat u w
 
-instance Category (Arrow obj) where
+instance Category (Arrow cat) where
   id = Id
   Id . f = f
   g . Id = g
   g . f = Comp g f
 
 -- Equality for an Arrow is defined by structural equality
-instance Eq (Arrow obj u v) where
+instance Eq (Arrow cat u v) where
   a1 == a2 = case eqArrow a1 a2 of
     Just Refl -> True
     Nothing -> False
 
-eqArrow :: Arrow obj u v -> Arrow obj u w -> Maybe (v :~: w)
+eqArrow :: Arrow cat u v -> Arrow cat u w -> Maybe (v :~: w)
 eqArrow Id Id = Just Refl
 eqArrow (Comp g1 f1) (Comp g2 f2) = do
   Refl <- eqArrow f1 f2

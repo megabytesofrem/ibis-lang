@@ -70,4 +70,46 @@ Ideas:
 └── dist
   └── out.c
 ```
-This will require the AST to now be co-inductive, and streamed from disk, with a cursor to the current position in the world.
+
+## Implementation of the World Gen
+Problem: We represent memory as covers within a Grothendieck site, forming a Grothendieck topos. The topos is by definition infinite, and we cannot store the entire topos in memory at once. 
+
+Solution: We use Minecraft logic, and treat the compiler as a game server. 
+
+```
+┌────────────────────────┐      ┌─────────────────────────┐      ┌──────────────────────────────┐
+│  Surface AST           │ ───> │  Co-inductive CoTerm    │ ───> │  Section CoTerm c            │
+│  (Finite 1D Tree)      │      │  (Infinite Observation) │      │  (Embedded Spatial Payload)  │
+└────────────────────────┘      └─────────────────────────┘      └──────────────────────────────┘
+```
+
+### Phase 1: Static Surface AST
+**Goal**: Parse source code into the surface AST.
+**State in RAM**: A standard AST in memory
+**Purpose**: This acts purely as an input seed to the next phase
+
+### Phase 2: Co-inductive AST
+**Goal**: Convert the surface AST into a co-inductive AST. We do this by doing the following:
+
+1. Extract site rules (`SiteDecl` nodes) to define the topological rules and site covers of our
+Grothendieck site.
+2. Assign top level coordinates: Every top-level declaration is assigned a spatial coordinate in the world.
+3. Lift terms into sections: Every top-level declaration is lifted into a section of the presheaf over the Grothendieck site. We say that the term is "spatially located" at the coordinate assigned to it, and the presheafs payload is the term itself.
+
+```hs
+data ASTSection c = ASTSection
+  { sectionCoord :: SectorCoord
+  , sectionTerm :: CoTerm
+  }
+```
+
+## Phase 3: Infinite Streaming Topos
+Now the `WorldGen` takes over. Terms are expanded and lowered on demand based on an internal
+camera position so long as it is within a render distance of the camera.
+
+1. Camera raymarches: As the observer moves through the world, the camera raymarches through the world and requests sections of the presheaf at the coordinates it is currently observing.
+2. Local expansion: If a term contaisn an unexpanded site-cover (`Cover u v`, `Res u v`) or recursive types, `WorldGen` generates adjacent voxel chunks containing the expanded sub-terms
+3. Code emission: The local slices of the topos (within the render distance) are lowered to C
+basic blocks and written into a byte-buffer.
+4. Garbage collection: Once the camera steps past the render distance, any slices of the topos 
+that are no longer within the render distance are garbage collected and removed from memory.
