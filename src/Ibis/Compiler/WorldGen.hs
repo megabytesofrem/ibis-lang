@@ -15,28 +15,20 @@ module Ibis.Compiler.WorldGen where
 
 import Category.FiniteCover (CoveringArrow (..), FiniteCover (..))
 import Category.Grothendieck (GrothendieckSite, Sieve (..), isCoveringSieve)
-import Category.Presheaf.Type (Section)
+import Category.Presheaf.Arrow (Arrow (Comp, Inclusion))
+import Category.Presheaf.Type (Section (Empty, Restrict))
+import Data.Foldable (find)
+import Data.Proxy (Proxy (Proxy))
+import Data.Word (Word32)
 
-import Data.Proxy (Proxy)
+import Ibis.AST.CoAST (ChunkPos (..), LocalPos)
+import Ibis.Compiler.World (World (..), WorldChunk (..), chunkCoord, chunkData, worldChunks)
 
--- | Represents a world in the Ibis compiler, consisting of a Grothendieck site
--- and a collection of voxel chunks, each with its own spatial coverage and data.
---
--- NOTE: cat is the category of spatial indices (e.g., 3D coordinates), c is the type of spatial index objects,
--- and val is the type of values stored in the voxel chunks (e.g., terrain data, block types, etc.).
-data World cat (c :: cat) val = World
-  { worldSite :: GrothendieckSite cat -- The Grothendieck site representing the spatial topology of the world
-  , worldChunks :: [VoxelChunk cat c val] -- List of voxel chunks in the world
-  }
+localRestriction :: LocalPos -> Arrow cat target c
+localRestriction localPos = Inclusion localPos
 
--- | A sector coordinate in the world, represented as a 3D integer vector (x, y, z).
-type SectorCoord = (Int, Int, Int)
-
-data VoxelChunk cat (c :: cat) val = VoxelChunk
-  { chunkCoord :: SectorCoord
-  , siteCoverage :: FiniteCover cat c
-  , chunkData :: Section val c
-  }
+localComposition :: LocalPos -> LocalPos -> Arrow cat target c
+localComposition pos1 pos2 = Comp (Inclusion pos2) (Inclusion pos1)
 
 -- | Materialize an abstract sieve into a concrete finite cover by filtering the candidate covering arrows that satisfy
 -- the sieve predicate.
@@ -59,10 +51,29 @@ materializeSieve p sdepth candidates sieve =
         , coveringArrows = valid
         }
 
+chunkAt :: World cat c val -> ChunkPos -> Maybe (WorldChunk cat c val)
+chunkAt world coord =
+  let chunks = worldChunks world
+   in find (\chunk -> chunkCoord chunk == coord) chunks
+
+sectionIn
+  :: World cat c val
+  -- ^ The world containing the voxel chunks
+  -> ChunkPos
+  -- ^ The coordinates of the chunk to retrieve the section from
+  -> Arrow cat target c
+  -- ^ The sub-arrow representing inclusion of target into 'c'
+  -> Maybe (Section val target)
+  -- ^ The section of the presheaf over the target object, if the chunk exists
+sectionIn world coord subArrow = do
+  chunk <- chunkAt world coord
+  pure $ Restrict subArrow (chunkData chunk)
+
+-- | Generate a chunk in the world at the given coordinates
 generateChunk
   :: GrothendieckSite cat
   -- ^ The Grothendieck site depicting the spatial topology of the world
-  -> SectorCoord
+  -> ChunkPos
   -- ^ The coordinates of the chunk to generate
   -> Proxy (c :: cat)
   -- ^ Proxy tag for the spatial index object 'c' representing the chunk
@@ -72,18 +83,43 @@ generateChunk
   -- ^ Candidate covering arrows into the chunk's spatial index object 'c'
   -> Sieve cat c
   -- ^ The sieve predicate defining the covering condition for the chunk
-  -> VoxelChunk cat c val
+  -> WorldChunk cat c val
   -- ^ The generated voxel chunk with its spatial coverage and data
 generateChunk site coord proxy payload candidates sieve =
   if isCoveringSieve site sieve
     then
       let finiteCover = materializeSieve proxy (computeDepth coord) candidates sieve
-       in VoxelChunk
+       in WorldChunk
             { chunkCoord = coord
             , siteCoverage = finiteCover
             , chunkData = payload
             }
     else error "Sieve does not cover the chunk's spatial index object."
  where
-  computeDepth :: SectorCoord -> Int
-  computeDepth (_, y, _) = y -- Y coordinate is the depth
+  computeDepth :: ChunkPos -> Int
+  computeDepth (ChunkPos _ y _) = fromIntegral y
+
+-- | Generate the world with a given size (width, height, depth) and a Grothendieck site topology.
+--
+-- The world is infinitely expanding, width height and depth are the number of initial chunks to
+-- generate (in each dimension)
+generateWorld :: GrothendieckSite cat -> (Word32, Word32, Word32) -> World cat c val
+generateWorld site (width, height, depth') =
+  let coords =
+        [ ChunkPos x y z
+        | x <- [0 .. width - 1]
+        , y <- [0 .. height - 1]
+        , z <- [0 .. depth' - 1]
+        ]
+      chunks =
+        map
+          ( \coord ->
+              -- Each chunk is generated with an empty section and a trivial sieve that covers
+              -- the chunk's spatial index object.
+              generateChunk site coord (Proxy :: Proxy c) Empty [] (Sieve $ \_ -> True)
+          )
+          coords
+   in World
+        { worldSite = site
+        , worldChunks = chunks
+        }

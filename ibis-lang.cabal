@@ -55,13 +55,16 @@ library
     Category.Presheaf.Arrow
     Category.Presheaf.Opposite
     Category.Presheaf.Type
+    Data.Serialization
     Ibis.AST
     Ibis.AST.CFG
     Ibis.AST.CoAST
     Ibis.AST.Core
     Ibis.AST.Operator
     Ibis.AST.Surface
+    Ibis.Compiler.World
     Ibis.Compiler.WorldGen
+    Ibis.Compiler.WorldServer
     Ibis.Parser
     Ibis.Parser.Lexer
     Ibis.Parser.Pattern
@@ -88,11 +91,14 @@ library
   -- Other library packages from which modules are imported.
   build-depends:
     base ^>=4.20.2.0,
+    binary ^>=0.8.9.3,
+    bytestring ^>=0.12.2.0,
     categories ^>=1.0.7,
     containers ^>=0.8,
     megaparsec ^>=9.8.1,
     mtl ^>=2.3.0,
     parser-combinators ^>=1.3.1,
+    stm ^>=2.5.3.1,
 
   -- Directories containing source files.
   hs-source-dirs: src

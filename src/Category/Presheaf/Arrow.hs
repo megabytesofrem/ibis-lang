@@ -12,14 +12,17 @@ module Category.Presheaf.Arrow
 
 import Control.Category
 import Data.Type.Equality ((:~:) (Refl))
+import Unsafe.Coerce (unsafeCoerce)
 import Prelude hiding (id, (.))
+
+import Ibis.AST.CoAST (LocalPos)
 
 -- | An arrow in a category where objects are of type 'cat'
 data Arrow cat (u :: cat) (v :: cat) where
   -- The identity arrow for an object 'u' in a category
   Id :: Arrow cat u u
   -- Inclusion: u is a valid subobject/cover of v, an arrow from u -> v
-  Inclusion :: Arrow cat u v
+  Inclusion :: LocalPos -> Arrow cat u v
   -- Composition of two arrows: if f: u -> v and g: v -> w, then g . f: u -> w
   Comp :: Arrow cat v w -> Arrow cat u v -> Arrow cat u w
 
@@ -37,6 +40,9 @@ instance Eq (Arrow cat u v) where
 
 eqArrow :: Arrow cat u v -> Arrow cat u w -> Maybe (v :~: w)
 eqArrow Id Id = Just Refl
+eqArrow (Inclusion p1) (Inclusion p2)
+  | p1 == p2 = Just (unsafeCoerce Refl) -- Same LocalPos implies same target type
+  | otherwise = Nothing
 eqArrow (Comp g1 f1) (Comp g2 f2) = do
   Refl <- eqArrow f1 f2
   Refl <- eqArrow g1 g2

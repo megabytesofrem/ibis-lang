@@ -63,7 +63,7 @@ instance (Category k) => KFunctor k (Lan k f) where
 
 instance KContravariant (Arrow cat) (Section val) where
   contramapK Id secV = secV
-  contramapK Inclusion secV = Restrict Inclusion secV
+  contramapK (Inclusion pos) secV = Restrict (Inclusion pos) secV
   contramapK (Comp g f) secV =
     let secMid = contramapK f secV
      in contramapK g secMid
@@ -84,6 +84,7 @@ instance (Eq val) => Eq (GluedSection val u v) where
 
 -- | A section of a presheaf over an object 'u' in a category
 data Section val (u :: cat) where
+  Empty :: Section val u
   Base :: val -> Section val u
   Restrict
     :: Arrow cat u v

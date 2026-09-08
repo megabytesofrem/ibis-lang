@@ -27,10 +27,10 @@ data ChunkPos = ChunkPos !Word32 !Word32 !Word32
   deriving (Eq, Show, Ord)
 
 -- | Local coordinates within a chunk, represented as (x, y, z) offsets.
-data LocalCoord = LocalCoord !Word8 !Word8 !Word8
+data LocalPos = LocalPos !Word8 !Word8 !Word8
   deriving (Eq, Show, Ord)
 
-data SpatialCoord = SpatialCoord !ChunkPos !LocalCoord
+data SpatialCoord = SpatialCoord !ChunkPos !LocalPos
   deriving (Eq, Show, Ord)
 
 -- | Spatial closure holding the coordinate cursor instead of a Haskell function
@@ -111,7 +111,7 @@ data Neutral
 -- | A chunk in the co-inductive AST, representing a spatially localized portion of the world.
 data CoChunk = CoChunk
   { chunkPos :: !ChunkPos -- Position of the chunk in the world
-  , localCoords :: [LocalCoord] -- List of local coordinates within the chunk
+  , localCoords :: [LocalPos] -- List of local coordinates within the chunk
   }
   deriving (Show, Eq, Ord)
 

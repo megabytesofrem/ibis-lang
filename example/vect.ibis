@@ -3,3 +3,12 @@ inductive Vect (a : Type u) : Nat n -> Type u where
   Cons : (x: a) -> (xs: Vect a n) -> Vect a (n + 1)
 
 def newVect (a : Type u) (len : Nat) := Vect.mk a len
+
+-- List
+site IndList where
+  inductive cover @J(i) = J^(i + 1)
+  cover @IndExpand = {@J..}
+
+struct List (S : Site) (C: Cover S @IndExpand) (a : Type) (len : Nat) where
+  data : a
+  length : len
