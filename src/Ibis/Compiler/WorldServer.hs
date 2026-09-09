@@ -2,7 +2,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 
--- | World server for Ibis.CoverRule
+-- | World server for Ibis
 --
 -- Spawns a server that listens for requests to fetch or unload chunks and
 -- manages loaded chunks in memory.
