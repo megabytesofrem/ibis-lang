@@ -10,7 +10,7 @@
 -- 1. The world is a Grothendieck site with a topology defined by a sieve predicate, rather than a simple 3D grid.
 -- 2. Each chunk is a presheaf over the site, with chunk data represented as sections of the presheaf.
 -- 3. The world is infinite, but only a finite number of chunks are generated at any given time.
--- 4. The compiler has a render distance, what the fuck???
+-- 4. The compiler has a render distance (sdepth), what the fuck???
 module Ibis.Compiler.WorldGen where
 
 import Category.FiniteCover (CoveringArrow (..), FiniteCover (..))

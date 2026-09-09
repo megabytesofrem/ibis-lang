@@ -279,10 +279,10 @@ INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-fin
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 OUTPUT ibis_semantics.toc
+INPUT /nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmti10.tfm
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmti8.tfm
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmti7.tfm
-INPUT /nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmbx12.tfm
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmtt10.tfm
 INPUT /nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/public/cm/cmtt9.tfm

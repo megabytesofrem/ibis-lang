@@ -10,6 +10,7 @@ import Category.FiniteCover (FiniteCover)
 import Category.Grothendieck (GrothendieckSite)
 import Category.Presheaf.Type (Section)
 
+import Data.Foldable (find)
 import Ibis.AST.CoAST (ChunkPos (..))
 
 -- | Represents a world in the Ibis compiler, consisting of a Grothendieck site
@@ -28,7 +29,5 @@ data WorldChunk cat (c :: cat) val = WorldChunk
   , chunkData :: Section val c -- Section of the presheaf representing the chunk's data
   }
 
-data Region cat (c :: cat) val = Region
-  { regionChunks :: [WorldChunk cat c val] -- List of voxel chunks in the region
-  , regionChunkCount :: Int -- Number of chunks in the region
-  }
+lookupChunk :: ChunkPos -> World cat c val -> Maybe (WorldChunk cat c val)
+lookupChunk pos world = find (\c -> chunkCoord c == pos) (worldChunks world)

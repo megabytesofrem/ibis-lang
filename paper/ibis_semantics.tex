@@ -202,6 +202,57 @@ domain and co-domain of the function respectively, and $\mathcal{U}$ represents 
           \texttt{eval (Fst p)} to return \texttt{B}.
 \end{itemize}
 
+\pagebreak
+
+\section{The challenge: Topoi are infinite, memory is finite}
+The challenge of implementing a categorical memory safety system in a programming language is that topoi are both infinite
+and non-euclidean data structures, whereas memory is both finite and euclidean. This means we cannot directly map the structure of a topos
+(and thus a Grothendieck site) to memory as a clean data structure.
+
+There were two approaches:
+\begin{enumerate}
+    \item \textbf{The finite approach}: We can restrict the topos to a finite 1-topos, however this would limit the expressiveness and
+          make certain things (such as dynamic sized arrays) impossible to implement.
+    \item \textbf{The infinite approach}: We can allow the topos to be infinite, but this is a very cursed approach. We choose this approach
+          and detail on how it works in the next section.
+\end{enumerate}
+
+\subsection{Chunking the topos}
+We present a unorthodox approach to solving this problem: chunking the topos into finite pieces, and only loading chunks within a certain
+distance from the "camera" into memory, essentially giving the compiler a render distance. This is incredibly, openly cursed.
+
+The approach works in the following way:
+\begin{enumerate}
+    \item The topos is chunked into finite pieces, each of which is a chunk within a larger world.
+    \item Each chunk stores a coordinate, a finite cover of the topos (sliced from the infinite topos), and a payload of data (the presheaf sections).
+    \item The compiler only loads chunks within a certain distance from the "camera" into memory, and unloads chunks that are too far away.
+\end{enumerate}
+
+\subsection{WorldGen: Procedural generation of the topos}
+\textbf{WorldGen} is a procedural generation system that generates the topos on-the-fly, and it exposes functions:
+\texttt{materializeSieve}, \texttt{chunkAt}, \texttt{sectionIn}, and \texttt{generateChunk} which are responsible for generating the topos (in its chunked form),
+as well as a \texttt{generateWorld} function which generates an initial number of chunks and is fired off at the start of compilation.
+
+\subsection{WorldServer: A server for the topos}
+\textbf{WorldServer} is a server that runs in the background and serves chunks of the topos to the compiler on demand.
+Whenever the camera crosses a chunk boundary, the compiler requests the next chunk from the \textbf{WorldServer}, which generates it on-the-fly (using \textbf{WorldGen}) and
+sends it back to the compiler. It is a client server architecture, where the compiler is the client and the \textbf{WorldServer} is the server.
+
+\subsection{Debugging}
+As the topos is an infinite structure and the compiler only has a finite view of it, zero available debugging tools exist to visualize the topos.
+Thus, we introduce \textbf{Minecraft}. Minecraft is a 3D voxel-based game that allows us to visualize the topos in a 3D space, and it is used as a debugging tool
+for the compiler.
+
+\textbf{WorldServer} streams packets to \textbf{MinecraftServer}, which converts our chunked topos (and the entire dependently typed IR) into
+a Minecraft world, where each cover is a block and each section is a block, running on port \texttt{25565}.
+
+\subsection{Comparison to Minecraft}
+We can thus compare the topos to a procedurally-generated Minecraft world, where the world is infinite but the
+player can only view a finite portion of it at any time (the render distance).
+
+In our case, the world is the Grothendieck site, the chunks are the finite covers of the site, and the player is the compiler.
+
+
 \section{Category Theory}
 
 \subsection{Yoneda Lemma}

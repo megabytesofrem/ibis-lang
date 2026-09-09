@@ -1,15 +1,21 @@
-\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
 \contentsline {subsection}{\numberline {1.1}Syntax Overview}{3}{subsection.1.1}%
 \contentsline {subsection}{\numberline {1.2}Site Declarations}{3}{subsection.1.2}%
 \contentsline {section}{\numberline {2}Core: The Core Language}{4}{section.2}%
 \contentsline {section}{\numberline {3}The MLTT based type system}{5}{section.3}%
-\contentsline {section}{\numberline {4}Category Theory}{6}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Yoneda Lemma}{6}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Opposite Categories and Presheaves}{6}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Grothendieck Topology}{7}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Restriction Maps}{7}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Kan Extensions}{8}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Glueing axiom}{8}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Geometric Morphisms}{9}{subsection.4.7}%
-\contentsline {section}{\numberline {5}Glossary}{10}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Typing Judgments}{10}{subsection.5.1}%
+\contentsline {section}{\numberline {4}The challenge: Topoi are infinite, memory is finite}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Chunking the topos}{7}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}WorldGen: Procedural generation of the topos}{7}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}WorldServer: A server for the topos}{8}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Debugging}{8}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Comparison to Minecraft}{8}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Category Theory}{8}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Yoneda Lemma}{8}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Opposite Categories and Presheaves}{9}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Grothendieck Topology}{9}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Restriction Maps}{10}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Kan Extensions}{10}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Glueing axiom}{11}{subsection.5.6}%
+\contentsline {subsection}{\numberline {5.7}Geometric Morphisms}{11}{subsection.5.7}%
+\contentsline {section}{\numberline {6}Glossary}{12}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Typing Judgments}{12}{subsection.6.1}%

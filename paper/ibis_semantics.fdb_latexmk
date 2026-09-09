@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1788726364.72773 "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" "ibis_semantics.pdf" "ibis_semantics" 1788726365.27588 0
-  "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" 1788726364.4992 19114 3a1121b34f6be0ff9da6d644b1f111a2 ""
+["pdflatex"] 1788969163.74069 "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" "ibis_semantics.pdf" "ibis_semantics" 1788969164.30344 0
+  "/home/rem/Dev/Lang/ibis_lang/paper/ibis_semantics.tex" 1788969163.51582 22680 76e444b79a23e45596213ec5d0b9194e ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/map/fontname/texfonts.map" 1 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/nix/store/dwx0cnswr5fb44f1126kyrvkxrk5i99f-texlive-combined-full-2025-final-texmfdist/fonts/tfm/jknappen/ec/tcrm1095.tfm" 1 1536 02c06700a42be0f5a28664c7273f82e7 ""
@@ -183,10 +183,10 @@
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1 5541495 31aeefcfb4102ba6a134776e4219ddb9 ""
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/web2c/pdftex/pdflatex.fmt" 1 3637265 4ddf642bf8745afd24dea53622cb495b ""
   "/nix/store/hx6735alslsg1ddajdwzf576bj5ldfly-texlive-combined-full-2025-final/share/texmf-var/web2c/texmf.cnf" 1 44359 ab57453ee8c44e7580e39ac6b6f67c95 ""
-  "ibis_semantics.aux" 1788726365.21225 2121 de022ebe0741e420a1b5922b5c0f9bb4 "pdflatex"
-  "ibis_semantics.out" 1788726365.21225 2156 133584613ce27f3fa77ef1e2b54a24ec "pdflatex"
-  "ibis_semantics.tex" 1788726364.4992 19114 3a1121b34f6be0ff9da6d644b1f111a2 ""
-  "ibis_semantics.toc" 1788726365.21351 1203 f778aeea9c1e9978374b5b7c500b275b "pdflatex"
+  "ibis_semantics.aux" 1788969164.23755 2937 aadcb06393db45e5ac767d2c28ba4ac7 "pdflatex"
+  "ibis_semantics.out" 1788969164.23855 3453 420272f5e0c3190b35744e0ea2e0ec9a "pdflatex"
+  "ibis_semantics.tex" 1788969163.51582 22680 76e444b79a23e45596213ec5d0b9194e ""
+  "ibis_semantics.toc" 1788969164.23959 1773 017f592f1b229ee83be87319a390c91c "pdflatex"
   (generated)
   "ibis_semantics.aux"
   "ibis_semantics.log"

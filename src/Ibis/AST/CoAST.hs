@@ -107,17 +107,3 @@ data Neutral
   | NRes Value Value Value Value Neutral
   | NExt Value Value Value Value Neutral
   deriving (Eq, Show)
-
--- | A chunk in the co-inductive AST, representing a spatially localized portion of the world.
-data CoChunk = CoChunk
-  { chunkPos :: !ChunkPos -- Position of the chunk in the world
-  , localCoords :: [LocalPos] -- List of local coordinates within the chunk
-  }
-  deriving (Show, Eq, Ord)
-
--- | The world. A collection of chunks, making up an infinite topological space; represented
--- as a Minecraft-like world of chunks.
-data CoWorld = CoWorld
-  { worldChunks :: [(ChunkPos, CoChunk)] -- List of chunks in the world
-  , worldOrigin :: !ChunkPos -- Origin position of the world
-  }
