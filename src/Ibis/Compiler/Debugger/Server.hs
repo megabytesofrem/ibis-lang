@@ -16,7 +16,7 @@ import Network.Socket
 import Control.Concurrent (forkIO, killThread, threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (SomeException, bracket, catch, finally, throwIO)
-import Control.Monad (forever, unless, void)
+import Control.Monad (forever, unless, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.State.Strict (StateT, get, put, runStateT)
 
@@ -114,7 +114,7 @@ handleLogin sock env q = do
         ( JoinGame
             { entityId = 0
             , isHardcore = False
-            , gameMode = 2
+            , gameMode = 1
             , previousGameMode = -1
             , worldCount = 1
             , worldNames = ["minecraft:overworld"]
@@ -167,7 +167,8 @@ handleLogin sock env q = do
 
   -- 7. Populate the initial client view buffer through WorldServer and retain
   -- that per-connection state for incremental streaming during movement.
-  loadedChunks <- streamChunkBuffer sock q (ChunkPos 0 0 0) Set.empty
+  -- The player spawns at Y=64, immediately above section 3 (blocks 48..63).
+  loadedChunks <- streamChunkBuffer sock q (ChunkPos 0 3 0) Set.empty
 
   putStrLn $ "[Ibis Debugger] Camera reading head attached: " ++ show username
   withKeepAlives sock $ void $ runStateT (serverLoop sock env q) loadedChunks
@@ -200,6 +201,12 @@ handleStatusPing sock = do
 -- | Server view distance and the radius used for streamed chunks.
 serverViewDistance :: Int
 serverViewDistance = 1
+
+-- | WorldServer chunks are 16³ sections, while a Minecraft 1.16.5 Chunk Data
+-- packet is a complete 16×256×16 column.  Keep a small section radius around
+-- the player in the WorldServer request buffer.
+serverVerticalViewDistance :: Int
+serverVerticalViewDistance = 1
 
 serverLoop
   :: Socket
@@ -244,8 +251,13 @@ streamChunkAfterMovement
   -> Double
   -- ^ The current world Z coordinate of the player
   -> IO (Set.Set ChunkPos)
-streamChunkAfterMovement sock env q loadedChunks worldX _worldY worldZ = do
-  let nextChunk = ChunkPos (floor $ worldX / 16.0) 0 (floor $ worldZ / 16.0)
+streamChunkAfterMovement sock env q loadedChunks worldX worldY worldZ = do
+  let nextChunk =
+        ChunkPos
+          (floor $ worldX / 16.0)
+          (floor $ worldY / 16.0)
+          (floor $ worldZ / 16.0)
+
   changedChunk <- atomically $ do
     currentChunk <- readTVar (serverCursor env)
     if currentChunk == nextChunk
@@ -280,25 +292,43 @@ streamChunkBuffer
 streamChunkBuffer sock q center previouslyLoaded = do
   let desired = chunkBuffer center
       entering = desired `Set.difference` previouslyLoaded
-  mapM_ sendAt (Set.toList entering)
+      ChunkPos _ centerY _ = center
+  mapM_ (requestAndMaybeSend centerY) (Set.toList entering)
   pure desired
  where
-  sendAt position = do
+  requestAndMaybeSend centerY position@(ChunkPos _ sectionY _) = do
     worldChunk <- requestWorldChunk q position
-    sendWorldChunk sock worldChunk
+    -- One clientbound Chunk Data packet represents an X/Z column.  The server
+    -- requests every nearby Y section from WorldServer, but sends one column
+    -- for each entering X/Z coordinate until the encoder can aggregate all
+    -- returned sections into a single full column.
+    when (sectionY == centerY) $ sendWorldChunk sock worldChunk
 
 chunkBuffer :: ChunkPos -> Set.Set ChunkPos
-chunkBuffer (ChunkPos centerX _ centerZ) =
+chunkBuffer (ChunkPos centerX centerY centerZ) =
   Set.fromList . map toChunkPos $
-    [ (offsetX, offsetZ)
+    [ (offsetX, sectionY, offsetZ)
     | offsetZ <- [-serverViewDistance .. serverViewDistance]
+    , sectionY <- verticalSections centerY
     , offsetX <- [-serverViewDistance .. serverViewDistance]
     ]
  where
   signedX = fromIntegral (fromIntegral centerX :: Int32) :: Int
   signedZ = fromIntegral (fromIntegral centerZ :: Int32) :: Int
-  toChunkPos (offsetX, offsetZ) =
-    ChunkPos (fromIntegral $ signedX + offsetX) 0 (fromIntegral $ signedZ + offsetZ)
+  toChunkPos (offsetX, sectionY, offsetZ) =
+    ChunkPos (fromIntegral $ signedX + offsetX) sectionY (fromIntegral $ signedZ + offsetZ)
+
+-- | The vanilla 1.16.5 overworld has sixteen chunk sections (Y 0 through 15).
+-- Clamping avoids constructing negative Word32 section coordinates near bedrock.
+verticalSections :: Word32 -> [Word32]
+verticalSections centerY =
+  [ fromIntegral sectionY
+  | sectionY <- [lowerBound .. upperBound]
+  ]
+ where
+  center = fromIntegral centerY :: Int
+  lowerBound = max 0 (center - serverVerticalViewDistance)
+  upperBound = min 15 (center + serverVerticalViewDistance)
 
 -- | Request a chunk solely through WorldServer.  WorldServer is responsible
 -- for looking up or generating the value with its configured WorldGen action.
@@ -313,6 +343,7 @@ requestWorldChunk q pos = do
   replyVar <- newEmptyTMVarIO
   atomically $ writeTQueue q (FetchChunk pos replyVar)
   putStrLn $ "[Ibis Debugger] Requesting chunk at " ++ formatChunkPos pos ++ " from WorldServer..."
+
   mChunk <- timeout 50000000 (atomically $ takeTMVar replyVar) -- 50 seconds
   maybe (throwIO $ userError "World server did not reply within fifty seconds") pure mChunk
 
@@ -334,10 +365,11 @@ sendWorldChunk sock worldChunk =
 
 -- | Encode a WorldChunk into the Minecraft 1.16.5 Chunk Data packet format.
 --
--- NOTE: This implementation currently only supports chunks at y=0, with a solid
--- stone section at y=48..63, providing a safe surface at y=64 for the login teleport.
+-- The wire packet has no chunk-Y coordinate: it describes an X/Z column whose
+-- primary bitmask selects the included 16³ sections.  Each returned WorldChunk
+-- contributes its own Y section to that column.
 encodeWorldChunk :: WorldChunk cat c val -> Builder
-encodeWorldChunk (WorldChunk (ChunkPos cx 0 cz) _sieve _) =
+encodeWorldChunk (WorldChunk (ChunkPos cx sectionY cz) _sieve _) =
   int32BE (fromIntegral cx) -- Chunk X
     <> int32BE (fromIntegral cz) -- Chunk Z
     <> word8 1 -- Full Chunk (True)
@@ -348,9 +380,8 @@ encodeWorldChunk (WorldChunk (ChunkPos cx 0 cz) _sieve _) =
     <> sectionData
     <> buildVarInt 0 -- Block entities count (0)
  where
-  -- A solid stone section at y=48..63 provides a safe surface at y=64,
-  -- where the login teleport places the player.
-  primaryBitMask = buildVarInt 0x0008
+  sectionIndex = fromIntegral sectionY :: Int
+  primaryBitMask = buildVarInt (1 `shiftL` sectionIndex)
   sectionData =
     int16BE 4096 -- Non-air block count
       <> word8 4 -- Bits per block
@@ -359,11 +390,12 @@ encodeWorldChunk (WorldChunk (ChunkPos cx 0 cz) _sieve _) =
       <> buildVarInt 256 -- 4096 four-bit entries, packed into 256 longs
       <> mconcat (replicate 256 (int64BE 0))
 
-  -- Motion Blocking Heightmap (1024 longs packed into 36 Int64s)
+  -- Motion Blocking Heightmap (1024 longs packed into 36 Int64s).  The top of
+  -- the generated section is the highest solid block in this column.
   heightmapsNbt =
     buildRootNBT "" $
       TagCompound
-        [("MOTION_BLOCKING", TagLongArray (packedHeightMap 64))]
+        [("MOTION_BLOCKING", TagLongArray (packedHeightMap $ fromIntegral ((sectionIndex + 1) * 16)))]
 
   -- Protocol 754 encodes the full-chunk biome array as 1024 VarInts.  Using
   -- 32-bit integers leaves unread bytes in the client packet decoder.
@@ -378,5 +410,3 @@ encodeWorldChunk (WorldChunk (ChunkPos cx 0 cz) _sieve _) =
   packedHeightMap height =
     replicate 36 $
       fromIntegral (foldr (\index word -> word .|. (fromIntegral height `shiftL` (index * 9))) (0 :: Word64) [0 .. 6])
---
-encodeWorldChunk _ = error "encodeWorldChunk: Only supports chunks at y=0 for now."
