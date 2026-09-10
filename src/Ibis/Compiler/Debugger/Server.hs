@@ -37,6 +37,7 @@ import Ibis.Compiler.Debugger.Protocol
 
 import Ibis.Compiler.World (WorldChunk (..))
 import Ibis.Compiler.WorldServer (ServerEnv (..), ServerRequest (..))
+import Numeric (showHex)
 
 -- -----------------------------------------------------------------------------
 -- Debugger Entry Point & TCP Listener
@@ -167,8 +168,9 @@ handleLogin sock env q = do
 
   -- 7. Populate the initial client view buffer through WorldServer and retain
   -- that per-connection state for incremental streaming during movement.
-  -- The player spawns at Y=64, immediately above section 3 (blocks 48..63).
-  loadedChunks <- streamChunkBuffer sock q (ChunkPos 0 3 0) Set.empty
+  -- The player's feet are at Y=64, which is section 4.  The rendered solid
+  -- section is selected below the player (section 3: blocks 48..63).
+  loadedChunks <- streamChunkBuffer sock q (ChunkPos 0 4 0) Set.empty
 
   putStrLn $ "[Ibis Debugger] Camera reading head attached: " ++ show username
   withKeepAlives sock $ void $ runStateT (serverLoop sock env q) loadedChunks
@@ -227,7 +229,9 @@ serverLoop sock env q = forever $ do
       liftIO $ sendPacket sock 0x0E (buildMinecraftPacket $ systemChatMessage text)
     TeleportConfirmed{} -> pure ()
     ClientSettings -> pure ()
-    UnrecognisedPacket{} -> pure ()
+    UnrecognisedPacket pid lbs -> do
+      liftIO $ putStrLn $ "[Ibis Debugger] Unrecognised packet: ID=0x" ++ showHex pid "" ++ ", data=" ++ show lbs
+      pure ()
     _ -> pure ()
  where
   updateLoadedBuffer :: Double -> Double -> Double -> StateT (Set.Set ChunkPos) IO ()
@@ -293,16 +297,19 @@ streamChunkBuffer sock q center previouslyLoaded = do
   let desired = chunkBuffer center
       entering = desired `Set.difference` previouslyLoaded
       ChunkPos _ centerY _ = center
-  mapM_ (requestAndMaybeSend centerY) (Set.toList entering)
+      renderedSectionY = sectionBelow centerY
+  mapM_ (requestAndSendColumn renderedSectionY) (Set.toList entering)
   pure desired
  where
-  requestAndMaybeSend centerY position@(ChunkPos _ sectionY _) = do
+  requestAndSendColumn renderedSectionY position@(ChunkPos _ sectionY _) = do
     worldChunk <- requestWorldChunk q position
-    -- One clientbound Chunk Data packet represents an X/Z column.  The server
-    -- requests every nearby Y section from WorldServer, but sends one column
-    -- for each entering X/Z coordinate until the encoder can aggregate all
-    -- returned sections into a single full column.
-    when (sectionY == centerY) $ sendWorldChunk sock worldChunk
+    -- `sectionData` is currently encoded as a completely solid 16³ cube.  If
+    -- that cube is emitted at the player's current Y section, it intersects
+    -- the player and forms a wall on every horizontal chunk boundary.  Emit
+    -- the requested section directly below their feet instead, so it is a
+    -- walkable floor.  The other Y sections are still fetched from WorldServer
+    -- and remain available for future column aggregation.
+    when (sectionY == renderedSectionY) $ sendWorldChunk sock worldChunk
 
 chunkBuffer :: ChunkPos -> Set.Set ChunkPos
 chunkBuffer (ChunkPos centerX centerY centerZ) =
@@ -329,6 +336,12 @@ verticalSections centerY =
   center = fromIntegral centerY :: Int
   lowerBound = max 0 (center - serverVerticalViewDistance)
   upperBound = min 15 (center + serverVerticalViewDistance)
+
+-- | Select the solid section immediately below the player's current section.
+-- Section zero has no lower neighbour, so it remains the floor at bedrock.
+sectionBelow :: Word32 -> Word32
+sectionBelow sectionY =
+  fromIntegral (max 0 (fromIntegral sectionY - 1 :: Int))
 
 -- | Request a chunk solely through WorldServer.  WorldServer is responsible
 -- for looking up or generating the value with its configured WorldGen action.
