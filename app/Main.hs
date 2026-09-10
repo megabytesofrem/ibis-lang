@@ -55,11 +55,7 @@ initialCoveringArrows = [CoveringArrow Id]
 
 main :: IO ()
 main = do
-  putStrLn "=================================================================="
-  putStrLn "   Ibis Compiler Runtime & Spatial Grothendieck Debugger Engine   "
-  putStrLn "=================================================================="
-
-  putStrLn "[Ibis Engine] Materializing Grothendieck site topology from axioms..."
+  putStrLn "[Ibis] Materializing Grothendieck site topology..."
 
   -- 1. Initialize the WorldServer state environment with verified topological types
   env <- initServer canonicalSite initialSectionPayload initialCoveringArrows universalSieve
@@ -68,11 +64,11 @@ main = do
   requestQueue <- newTQueueIO
 
   -- 3. Spawn the background WorldServer evaluation loop on a dedicated GHC green thread
-  putStrLn "[Ibis Engine] Forking concurrent WorldServer polling loop..."
+  putStrLn "[Ibis] Forking concurrent WorldServer polling loop..."
   _ <- forkIO $ runReaderT (runServer requestQueue) env
 
   -- 4. Bind TCP 0.0.0.0:25545 and run the spatial visual debugger on the main thread
   putStrLn "[Ibis Debugger] Binding socket to 0.0.0.0:25545..."
-  putStrLn "[Ibis Debugger] Connect via Minecraft 1.20.1 (Protocol 763) at localhost:25545"
+  putStrLn "[Ibis Debugger] Connect via Minecraft 1.16.5 at localhost:25545"
 
   startDebugger env requestQueue

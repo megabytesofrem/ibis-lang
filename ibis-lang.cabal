@@ -63,6 +63,7 @@ library
     Ibis.AST.Operator
     Ibis.AST.Surface
     Ibis.Compiler.Debugger.NBT
+    Ibis.Compiler.Debugger.Protocol
     Ibis.Compiler.Debugger.Server
     Ibis.Compiler.World
     Ibis.Compiler.WorldGen
