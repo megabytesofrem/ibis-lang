@@ -4,15 +4,17 @@ module ElabTests (elabTests) where
 
 import Test.Tasty (TestTree)
 import Test.Tasty.Hspec
-import Text.Megaparsec (eof, parse)
+import Text.Megaparsec (eof, many, parse)
 
 import Control.Monad (unless)
 import Data.Either (isLeft)
-import Ibis.Syntax.AST.Core qualified as Core
-import Ibis.Syntax.Parser (pDecl, pExpr)
+
+import Ibis.AST (Decl (..), FunctionBody (..))
+import Ibis.AST.Core qualified as Core
+import Ibis.AST.Surface (Literal (..), Term (..))
+import Ibis.Parser (pDecl, pExpr)
 import Ibis.Typecheck.Elab (elabDecl, elabTerm)
 import Ibis.Typecheck.ElabCtx (emptyElabCtx, runElaboration)
-
 import Test.Hspec
 
 elabTests :: IO TestTree

@@ -65,11 +65,14 @@ library
     Ibis.Compiler.Debugger.NBT
     Ibis.Compiler.Debugger.Protocol
     Ibis.Compiler.Debugger.Server
+    Ibis.Compiler.Hydrate
     Ibis.Compiler.World
     Ibis.Compiler.WorldGen
     Ibis.Compiler.WorldServer
     Ibis.Parser
+    Ibis.Parser.Decl
     Ibis.Parser.Lexer
+    Ibis.Parser.Netlist
     Ibis.Parser.Pattern
     Ibis.Parser.Tactic
     Ibis.Parser.Term

@@ -1,0 +1,4 @@
+-- Universe netlist: Export all the worlds
+interface
+  world "list:world"
+end

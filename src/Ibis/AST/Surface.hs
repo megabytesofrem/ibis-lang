@@ -11,6 +11,7 @@ module Ibis.AST.Surface
     -- * Declarations
   , Param (..)
   , InductiveCtor (..)
+  , ForwardDecl (..)
   , FunctionBody (..)
   , CoverRule (..)
   )
@@ -19,7 +20,7 @@ where
 import Ibis.AST.Operator (Binop, Unop)
 
 -------------------------------------------------------------
--- EXPRESSION NODES
+-- Expression Nodes
 -------------------------------------------------------------
 
 data Literal
@@ -74,7 +75,7 @@ data Term
   deriving (Show, Eq)
 
 ---------------------------------------------
--- DECLARATION NODES
+-- Declaration Nodes
 ---------------------------------------------
 
 data Tactic
@@ -108,6 +109,13 @@ data InductiveCtor = InductiveCtor
   }
   deriving (Show, Eq)
 
+data ForwardDecl = ForwardDecl
+  { fdlName :: String
+  , fdlParams :: [String]
+  , fdlReturnType :: Maybe Term
+  }
+  deriving (Show, Eq)
+
 data FunctionBody
   = SimpleBody Term -- A simple term body
   | TacticBody [Tactic] -- A tactic-based proof body
@@ -133,11 +141,12 @@ data Decl
       , indArity :: Term
       , indConstructors :: [InductiveCtor]
       }
+  | ForwardDecl' ForwardDecl
   | FunctionDecl
       { funcName :: String
-      , funcParams :: [Param]
-      , funcReturnType :: Term
-      , funcBody :: FunctionBody
+      , funcParams :: [String]
+      , funcReturnType :: Maybe Term
+      , funcBody :: Maybe FunctionBody
       }
   | SiteDecl
       { siteDeclName :: String
@@ -147,11 +156,14 @@ data Decl
   | ImportDeclExposing String [String] -- import ModuleName exposing (name1, name2)
   deriving (Show, Eq)
 
-newtype Program = Program [Decl]
+data Program = Program
+  { intfDecls :: [ForwardDecl] -- Interface forward declarations
+  , implDecls :: [Decl] -- Implementation declarations (structs, inductives, functions, etc.)
+  }
   deriving (Show, Eq)
 
 ---------------------------------------------
--- PATTERN NODES
+-- Pattern Nodes
 ---------------------------------------------
 
 data Pat
@@ -162,7 +174,3 @@ data Pat
   | PCtor String [Pat] -- Ctor x y
   | PPartition String Pat -- (x:xs)
   deriving (Show, Eq)
-
----------------------------------------------
--- PRETTYPRINT INSTANCES
----------------------------------------------

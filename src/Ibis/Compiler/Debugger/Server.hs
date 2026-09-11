@@ -389,36 +389,30 @@ encodeWorldChunk (WorldChunk (ChunkPos cx sectionY cz) _sieve _) =
     <> primaryBitMask
     <> heightmapsNbt
     <> biomesArray
-    <> buildVarInt dataLength
-    <> sectionData
+    <> buildVarInt (fromIntegral $ LBS.length sectionDataBytes)
+    <> lazyByteString sectionDataBytes
     <> buildVarInt 0 -- Block entities count (0)
  where
   sectionIndex = fromIntegral sectionY :: Int
   primaryBitMask = buildVarInt (1 `shiftL` sectionIndex)
-  sectionData =
-    int16BE 4096 -- Non-air block count
-      <> word8 4 -- Bits per block
-      <> buildVarInt 1 -- Palette size
-      <> buildVarInt 1 -- Global block state: minecraft:stone
-      <> buildVarInt 256 -- 4096 four-bit entries, packed into 256 longs
-      <> mconcat (replicate 256 (int64BE 0))
 
-  -- Motion Blocking Heightmap (1024 longs packed into 36 Int64s).  The top of
-  -- the generated section is the highest solid block in this column.
+  -- Evaluate sectionData to a Lazy ByteString first to get its EXACT length!
+  sectionDataBytes =
+    toLazyByteString $
+      int16BE 4096 -- Non-air block count
+        <> word8 4 -- Bits per block
+        <> buildVarInt 1 -- Palette size
+        <> buildVarInt 4105 -- Global block state: minecraft:glass!
+        <> buildVarInt 256 -- 4096 four-bit entries, packed into 256 longs
+        <> mconcat (replicate 256 (int64BE 0))
+
   heightmapsNbt =
     buildRootNBT "" $
       TagCompound
         [("MOTION_BLOCKING", TagLongArray (packedHeightMap $ fromIntegral ((sectionIndex + 1) * 16)))]
 
-  -- Protocol 754 encodes the full-chunk biome array as 1024 VarInts.  Using
-  -- 32-bit integers leaves unread bytes in the client packet decoder.
   biomesArray = buildVarInt 1024 <> mconcat (replicate 1024 (buildVarInt 1))
 
-  -- Block Count (2), bits/block, palette length, palette item, data-array
-  -- length (VarInt 256 takes two bytes), then 256 longs.
-  dataLength = 2 + 1 + 1 + 1 + 2 + 256 * 8
-
-  -- Packed heightmap for a flat world at y=64. Each long contains 7 9-bit height values.
   packedHeightMap :: Int64 -> [Int64]
   packedHeightMap height =
     replicate 36 $

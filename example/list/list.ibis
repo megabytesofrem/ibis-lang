@@ -1,0 +1,18 @@
+interface
+  -- Export ports
+  site IndList (@J, @IndExpand)
+  mkList : List -> Site S -> Cover S @IndExpand -> Type -> Nat
+
+implementation
+  -- Implementation
+  site IndList where
+    inductive cover @J(i) = J(i + 1)
+    cover @IndExpand = {@J...}
+
+  struct List (S : Site) (C: Cover S @IndExpand) (a : Type) (len : Nat) where
+    data : a
+    length : len
+
+  mkList : List -> Site S -> Cover S @IndExpand -> Type -> Nat
+  mkList list {site} {cover} a len = List {site} {cover} a len
+end

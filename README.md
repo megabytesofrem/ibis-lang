@@ -11,6 +11,11 @@ the underlying mathematical model that Ibis is based on.
 - **WorldGen**: Procedural world generations that works in-tandem with **WorldServer** to generate and cache chunks of the topology on-demand, bypassing the issue of storing an infinite topology in memory.
 - **Debugger**: A Minecraft 1.16.5 client-server protocol that communicates bi-directionally with the WorldServer to visualize the Grothendieck site topology in 3D, and to allow for interactive exploration of the topology.
 
+## Design Tradeoffs
+- Lean style syntax: A pipe dream. Gone by necessity and replaced with Haskell and Pascal
+style `interface/implementation` syntax — because we have **no** EOF.
+- Modules: Gone, they are impossible. Hope you like netlists! Because 4 levels of netlist is the *best* you get, because the compiler is single pass due to the laws of physics.
+
 ## Current TODOs
 - Fully implement Millers Higher Order Pattern Unification algorithm (`Ibis.Typecheck.Unify.Solver`)
   for solving unification problems in the elaborator.

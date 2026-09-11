@@ -1,0 +1,9 @@
+-- World netlist: Export all public facing interfaces from the world
+-- *must* match list.ibis
+world "list"
+version 1.0
+
+interface
+  site IndList (@J, @IndExpand)
+  mkList : List -> Site S -> Cover S @IndExpand -> Type -> Nat
+end

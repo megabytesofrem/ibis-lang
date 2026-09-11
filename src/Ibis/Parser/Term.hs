@@ -1,4 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Ibis.Parser.Term where
 
@@ -11,7 +12,6 @@ import Ibis.AST.Operator (Binop (..), Unop (..))
 import Ibis.AST.Surface
 import Ibis.Parser.Lexer (Parser, lexeme, pCtorName, pIdent, pLiteral, parens, symbol)
 import Ibis.Parser.Pattern (pPattern)
-import Ibis.Parser.Tactic (pByBlock)
 
 -- Parse a typed pair: x : A
 typedPair :: Parser Param
@@ -344,45 +344,57 @@ pInductiveDeclaration = do
   pure $ InductiveDecl name params arity ctors
 
 pFunctionBody :: Parser FunctionBody
-pFunctionBody =
-  choice
-    [ SimpleBody <$> pExpr -- def f (x : A) (y : B) : C := e
-    , TacticBody <$> pByBlock -- def f (x : A) (y : B) : C := by ... qed
-    ]
+pFunctionBody = SimpleBody <$> pExpr
 
--- Parse a function declaration:
--- def f (x : A) (y : B) : C := e
--- OR
--- def f (x : A) (y : B) : C := by
---   intro z
---   exact (g z)
--- qed
-pFunctionDeclaration :: Parser Decl
-pFunctionDeclaration = do
-  _ <- symbol "def"
+-- Parse a forward declaration:
+--   foo : Int -> Int
+pForwardDeclaration :: Parser ForwardDecl
+pForwardDeclaration = do
   name <- pIdent
-  params <- telescope
   _ <- symbol ":"
-  returnType <- pExpr
-  _ <- symbol ":="
-  body <- pFunctionBody
-  pure $
-    FunctionDecl
-      name
-      params
-      returnType
-      body
+  typ <- pExpr
+  pure $ ForwardDecl name [] (Just typ)
+
+-- Parse a function declaration or definition:
+--   foo' a b = a + b
+--   foo' : Int -> Int = a + b
+pFunctionDeclaration :: Parser Decl
+pFunctionDeclaration =
+  choice
+    [ try (ForwardDecl' <$> pForwardDeclaration)
+    , do
+        name <- pIdent
+        params <- many pIdent
+        _ <- symbol "="
+        body <- pExpr
+        pure $ FunctionDecl name params Nothing (Just $ SimpleBody body)
+    , do
+        name <- pIdent
+        _ <- symbol ":"
+        typ <- pExpr
+        _ <- symbol "="
+        body <- pExpr
+        pure $ FunctionDecl name [] (Just typ) (Just $ SimpleBody body)
+    ]
 
 -- Top-level declaration parser
 pDecl :: Parser Decl
 pDecl =
   choice
-    [ TermDecl <$> pExpr
+    [ pFunctionDeclaration
     , pStructDeclaration
     , pInductiveDeclaration
-    , pFunctionDeclaration
     , pSiteDeclaration
+    , TermDecl <$> pExpr
     ]
+
+pProgram :: Parser Program
+pProgram = do
+  _ <- symbol "interface"
+  intfDecls' <- many pForwardDeclaration
+  _ <- symbol "implementation"
+  implDecls' <- many pDecl
+  pure $ Program intfDecls' implDecls'
 
 -------------------------------------------------------------
 
