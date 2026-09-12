@@ -23,11 +23,7 @@ import Category.Presheaf.Type (Section (..))
 
 -- Compiler World Server & Visual Debugger Engine Modules
 import Ibis.Compiler.Debugger.Server (startDebugger)
-import Ibis.Compiler.WorldServer (initServer, runServer)
-
--- -----------------------------------------------------------------------------
--- 1. Real Topological Site & Sieve Materialization
--- -----------------------------------------------------------------------------
+import Ibis.Compiler.WorldSubstrate (initSubstrate, runSubstrate)
 
 -- | Construct a canonical Grothendieck site where every sieve acts as a valid cover.
 -- This satisfies base-change stability, local character, and maximal sieve axioms.
@@ -50,24 +46,25 @@ initialCoveringArrows :: forall cat (c :: cat). [CoveringArrow cat c]
 initialCoveringArrows = [CoveringArrow Id]
 
 -- -----------------------------------------------------------------------------
--- 2. Executable Entry Point
+-- Executable Entry Point
 -- -----------------------------------------------------------------------------
 
 main :: IO ()
 main = do
-  putStrLn "[Ibis] Materializing Grothendieck site topology..."
+  putStrLn "[Ibis] Initializing substrate from canonical Grothendieck site..."
 
-  -- 1. Initialize the WorldServer state environment with verified topological types
-  env <- initServer canonicalSite initialSectionPayload initialCoveringArrows universalSieve
+  -- Initialize the substrate emulator with the canonical site, initial section payload, and covering arrows
+  env <- initSubstrate canonicalSite initialSectionPayload initialCoveringArrows universalSieve
 
-  -- 2. Allocate the lock-free STM request queue
+  -- Allocate the lock-free STM request queue
   requestQueue <- newTQueueIO
 
-  -- 3. Spawn the background WorldServer evaluation loop on a dedicated GHC green thread
-  putStrLn "[Ibis] Forking concurrent WorldServer polling loop..."
-  _ <- forkIO $ runReaderT (runServer requestQueue) env
+  -- Spawn the background substrate polling loop to handle chunk requests and world state updates
+  -- This is the emulator itself, which is also a server of sorts
+  putStrLn "[Ibis] Forking concurrent substrate polling loop..."
+  _ <- forkIO $ runReaderT (runSubstrate requestQueue) env
 
-  -- 4. Bind TCP 0.0.0.0:25545 and run the spatial visual debugger on the main thread
+  -- Bind TCP 0.0.0.0:25545 and run the spatial visual debugger on the main thread
   putStrLn "[Ibis Debugger] Binding socket to 0.0.0.0:25545..."
   putStrLn "[Ibis Debugger] Connect via Minecraft 1.16.5 at localhost:25545"
 

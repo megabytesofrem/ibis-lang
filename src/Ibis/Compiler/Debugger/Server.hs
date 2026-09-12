@@ -36,14 +36,14 @@ import Ibis.Compiler.Debugger.NBT
 import Ibis.Compiler.Debugger.Protocol
 
 import Ibis.Compiler.World (WorldChunk (..))
-import Ibis.Compiler.WorldServer (ServerEnv (..), ServerRequest (..))
+import Ibis.Compiler.WorldSubstrate (SubstrateEnv (..), SubstrateRequest (..))
 import Numeric (showHex)
 
 -- -----------------------------------------------------------------------------
 -- Debugger Entry Point & TCP Listener
 -- -----------------------------------------------------------------------------
 
-startDebugger :: ServerEnv cat c val -> TQueue (ServerRequest cat c val) -> IO ()
+startDebugger :: SubstrateEnv cat c val -> TQueue (SubstrateRequest cat c val) -> IO ()
 startDebugger env requestQueue = do
   addr <- resolve "25545"
   sock <- socket (addrFamily addr) Stream defaultProtocol
@@ -63,7 +63,7 @@ startDebugger env requestQueue = do
     result <- getAddrInfo (Just hints) Nothing (Just port)
     maybe (throwIO $ userError "No TCP address available") pure (listToMaybe result)
 
-handleConnection :: Socket -> ServerEnv cat c val -> TQueue (ServerRequest cat c val) -> IO ()
+handleConnection :: Socket -> SubstrateEnv cat c val -> TQueue (SubstrateRequest cat c val) -> IO ()
 handleConnection sock env q =
   handleHandshake sock env q `catch` reportDisconnect `finally` close sock
  where
@@ -76,8 +76,8 @@ handleConnection sock env q =
 
 handleHandshake
   :: Socket
-  -> ServerEnv cat c val
-  -> TQueue (ServerRequest cat c val)
+  -> SubstrateEnv cat c val
+  -> TQueue (SubstrateRequest cat c val)
   -> IO ()
 handleHandshake sock env q = do
   mHsPacket <- readPacket sock
@@ -91,8 +91,8 @@ handleHandshake sock env q = do
 
 handleLogin
   :: Socket
-  -> ServerEnv cat c val
-  -> TQueue (ServerRequest cat c val)
+  -> SubstrateEnv cat c val
+  -> TQueue (SubstrateRequest cat c val)
   -> IO ()
 handleLogin sock env q = do
   mLoginPacket <- readPacket sock
@@ -213,9 +213,9 @@ serverVerticalViewDistance = 1
 serverLoop
   :: Socket
   -- ^ The client socket to send chunk data to
-  -> ServerEnv cat c val
+  -> SubstrateEnv cat c val
   -- ^ The WorldServer environment for fetching chunks from our Grothendieck site
-  -> TQueue (ServerRequest cat c val)
+  -> TQueue (SubstrateRequest cat c val)
   -> StateT (Set.Set ChunkPos) IO ()
 serverLoop sock env q = forever $ do
   packet <- liftIO $ readMinecraftPacket sock >>= maybe (throwIO $ userError "Client disconnected") pure
@@ -243,9 +243,9 @@ serverLoop sock env q = forever $ do
 streamChunkAfterMovement
   :: Socket
   -- ^ The client socket to send chunk data to
-  -> ServerEnv cat c val
+  -> SubstrateEnv cat c val
   -- ^ The WorldServer environment for fetching chunks from our Grothendieck site
-  -> TQueue (ServerRequest cat c val)
+  -> TQueue (SubstrateRequest cat c val)
   -> Set.Set ChunkPos
   -- ^ The set of chunks currently loaded in the client view buffer
   -> Double
@@ -263,10 +263,10 @@ streamChunkAfterMovement sock env q loadedChunks worldX worldY worldZ = do
           (floor $ worldZ / 16.0)
 
   changedChunk <- atomically $ do
-    currentChunk <- readTVar (serverCursor env)
+    currentChunk <- readTVar (substrateCursor env)
     if currentChunk == nextChunk
       then pure False
-      else writeTVar (serverCursor env) nextChunk >> pure True
+      else writeTVar (substrateCursor env) nextChunk >> pure True
   if changedChunk
     then do
       let ChunkPos chunkX _ chunkZ = nextChunk
@@ -286,7 +286,7 @@ streamChunkBuffer
   :: forall cat (c :: cat) val
    . Socket
   -- ^ The client socket to send chunk data to
-  -> TQueue (ServerRequest cat c val)
+  -> TQueue (SubstrateRequest cat c val)
   -- ^ The WorldServer request queue for fetching chunks
   -> ChunkPos
   -- ^ The center chunk position to stream around
@@ -347,7 +347,7 @@ sectionBelow sectionY =
 -- for looking up or generating the value with its configured WorldGen action.
 requestWorldChunk
   :: forall cat (c :: cat) val
-   . TQueue (ServerRequest cat c val)
+   . TQueue (SubstrateRequest cat c val)
   -- ^ The WorldServer request queue for fetching chunks
   -> ChunkPos
   -- ^ The chunk position to request

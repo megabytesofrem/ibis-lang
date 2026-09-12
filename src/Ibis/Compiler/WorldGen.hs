@@ -5,6 +5,8 @@
 
 -- | World-generation for Ibis.
 --
+-- This is part 2 of the world system, the emulator itself is in @WorldSubstrate.hs@.
+--
 -- World generation inspired by Minecraft's chunk based generation, where each chunk is a 16x16x16 cube of blocks.
 -- Except:
 -- 1. The world is a Grothendieck site with a topology defined by a sieve predicate, rather than a simple 3D grid.
@@ -43,11 +45,11 @@ materializeSieve
   -- ^ The sieve predicate defining the covering condition for 'c'
   -> FiniteCover cat c
   -- ^ The resulting finite cover with the filtered covering arrows
-materializeSieve p sdepth candidates sieve =
+materializeSieve p cdepth candidates sieve =
   let valid = filter (\(CoveringArrow arr) -> sieve `contains` arr) candidates
    in FiniteCover
         { coverObject = p
-        , depth = sdepth
+        , depth = cdepth
         , coveringArrows = valid
         }
 

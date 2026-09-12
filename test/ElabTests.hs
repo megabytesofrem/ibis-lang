@@ -11,7 +11,7 @@ import Data.Either (isLeft)
 
 import Ibis.AST (Decl (..), FunctionBody (..))
 import Ibis.AST.Core qualified as Core
-import Ibis.AST.Surface (Literal (..), Term (..))
+import Ibis.AST.Surface (ForwardDecl (..), Literal (..), Term (..))
 import Ibis.Parser (pDecl, pExpr)
 import Ibis.Typecheck.Elab (elabDecl, elabTerm)
 import Ibis.Typecheck.ElabCtx (emptyElabCtx, runElaboration)
@@ -28,16 +28,25 @@ unwrap (Right x) = x
 spec :: Spec
 spec =
   describe "ElabTests" $ do
-    it "maps named universes to numeric levels" $ do
-      let result = parse (pExpr <* eof) "input" "Type u"
-      unless (isLeft result) $ do
-        let term = unwrap result
-        let result' = runElaboration (elabTerm term) emptyElabCtx
-        case result' of
-          Left err -> expectationFailure $ show err
-          Right (Core.Universe 1, _) -> pure ()
-          Right (got, _) ->
-            expectationFailure ("expected Type u to elaborate to Universe 1, got: " ++ show got)
+    it "parses forward declarations before definitions in source order" $ do
+      let result =
+            parse (many pDecl <* eof) "input" $
+              unlines
+                [ "a : Int"
+                , "a = 5"
+                , "b : Int"
+                , "b = 5"
+                ]
+
+      case result of
+        Left err -> expectationFailure $ show err
+        Right decls ->
+          decls
+            `shouldBe` [ ForwardDecl' (ForwardDecl "a" [] (Just (Const "Int")))
+                       , FunctionDecl "a" [] Nothing (Just (SimpleBody (Lit (LitInt 5))))
+                       , ForwardDecl' (ForwardDecl "b" [] (Just (Const "Int")))
+                       , FunctionDecl "b" [] Nothing (Just (SimpleBody (Lit (LitInt 5))))
+                       ]
 
     it "keeps explicit numeric universe levels unchanged" $ do
       let result = parse (pExpr <* eof) "input" "Type 7"

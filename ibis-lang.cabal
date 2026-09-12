@@ -68,7 +68,7 @@ library
     Ibis.Compiler.Hydrate
     Ibis.Compiler.World
     Ibis.Compiler.WorldGen
-    Ibis.Compiler.WorldServer
+    Ibis.Compiler.WorldSubstrate
     Ibis.Parser
     Ibis.Parser.Decl
     Ibis.Parser.Lexer
